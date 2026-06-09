@@ -6,7 +6,7 @@
 <title>Quiniela Mundial 2026</title>
 <style>
 :root {
-  --bg:#07111f; --panel:#0e1a2f; --panel2:#13233d; --card:#ffffff; --text:#eef5ff; --muted:#9fb0c7;
+  --bg:#07111f; --panel:#0e1a2f; --panel2:#13233d; --text:#eef5ff; --muted:#9fb0c7;
   --blue:#2563eb; --green:#16a34a; --red:#dc2626; --yellow:#facc15; --line:#2a3b58; --dark:#06101f;
 }
 *{box-sizing:border-box}
@@ -42,13 +42,12 @@ th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-
 .vs{text-align:center;color:#64748b;font-weight:900;font-size:.75rem}
 .muted{color:var(--muted)} .small{font-size:.86rem}
 .detail-list{display:grid;gap:10px}
-.detail-card{background:var(--dark);border:1px solid var(--line);border-radius:16px;padding:14px}
+.detail-card,.player-row{background:var(--dark);border:1px solid var(--line);border-radius:16px;padding:14px}
 .detail-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}
 @media(max-width:800px){.detail-grid{grid-template-columns:1fr}}
 .score-pill{display:inline-block;border-radius:999px;padding:6px 10px;background:#16a34a22;color:#bbf7d0;font-weight:900}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.admin-lock{max-width:520px;margin:auto}
-
+.admin-lock{max-width:720px;margin:auto}
 .cloud-status{position:fixed;right:16px;bottom:16px;background:#06101f;border:1px solid #2a3b58;border-radius:999px;padding:10px 14px;color:#bfdbfe;font-size:.85rem;box-shadow:0 10px 30px #0008;z-index:99}
 </style>
 </head>
@@ -145,14 +144,30 @@ th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-
 <section id="admin" class="sheet">
 <div class="panel admin-lock">
 <h2>Administración privada</h2>
-<p class="muted">Zona solo para descarga, sincronización con Google Sheets y reseteo de datos.</p>
+<p class="muted">Zona solo para descarga, sincronización con Google Sheets, gestión de jugadores y reseteo de datos.</p>
 <label>Clave de administrador</label>
 <input id="adminPass" type="password" placeholder="Clave">
 <div class="actions">
-<button class="success" onclick="downloadExcel()">Descargar reporte Excel</button>\n<button class="primary" onclick="syncAllToGoogleSheets()">Guardar todo en Google Sheets</button>
+<button class="success" onclick="downloadExcel()">Descargar reporte Excel</button>
+<button class="primary" onclick="syncAllToGoogleSheets()">Guardar todo en Google Sheets</button>
 <button class="danger" onclick="resetSecure()">Resetear todo a 0</button>
 </div>
-<p class="muted small">Clave actual: 2026</p>
+
+</div>
+
+<div class="panel">
+<h2>Gestión de jugadores</h2>
+<p class="muted">Agrega nuevos jugadores desde aquí. Esta acción queda guardada en este navegador y se sincroniza con Google Sheets al guardar.</p>
+<div class="grid">
+<div class="half">
+<label>Nombre del nuevo jugador</label>
+<input id="newPlayerName" placeholder="Ej: Carlos Castro">
+</div>
+</div>
+<div class="actions">
+<button class="success" onclick="addNewPlayer()">Agregar jugador</button>
+</div>
+<div id="playersAdminList" style="margin-top:14px"></div>
 </div>
 </section>
 
@@ -160,16 +175,31 @@ th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-
 </main>
 
 <script>
-const PLAYERS = [{"id": "p1", "name": "Jorge Castro"}, {"id": "p2", "name": "Diana Castro"}, {"id": "p3", "name": "Marta Castro"}, {"id": "p4", "name": "Sergio Solis"}, {"id": "p5", "name": "Allan Solis"}, {"id": "p6", "name": "Jose Porras"}, {"id": "p7", "name": "Charlie Castro"}];
+let PLAYERS = [{"id": "p1", "name": "Jorge Castro"}, {"id": "p2", "name": "Diana Castro"}, {"id": "p3", "name": "Marta Castro"}, {"id": "p4", "name": "Sergio Solis"}, {"id": "p5", "name": "Allan Solis"}, {"id": "p6", "name": "Jose Porras"}, {"id": "p7", "name": "Charlie Castro"}];
 const MATCHES = [{"id": "m1", "date": "2026-06-11T15:00", "stage": "Grupo A", "home": "México", "away": "Sudáfrica"}, {"id": "m2", "date": "2026-06-11T12:00", "stage": "Grupo A", "home": "Turquía", "away": "Paraguay"}, {"id": "m3", "date": "2026-06-12T15:00", "stage": "Grupo B", "home": "Canadá", "away": "Bosnia y Herzegovina"}, {"id": "m4", "date": "2026-06-12T21:00", "stage": "Grupo D", "home": "Estados Unidos", "away": "Paraguay"}, {"id": "m5", "date": "2026-06-13T18:00", "stage": "Grupo C", "home": "Brasil", "away": "Marruecos"}, {"id": "m6", "date": "2026-06-13T21:00", "stage": "Grupo C", "home": "Haití", "away": "Escocia"}, {"id": "m7", "date": "2026-06-14T15:00", "stage": "Grupo B", "home": "Catar", "away": "Suiza"}, {"id": "m8", "date": "2026-06-14T13:00", "stage": "Grupo E", "home": "Alemania", "away": "Curazao"}, {"id": "m9", "date": "2026-06-14T16:00", "stage": "Grupo F", "home": "Países Bajos", "away": "Japón"}, {"id": "m10", "date": "2026-06-14T19:00", "stage": "Grupo E", "home": "Costa de Marfil", "away": "Ecuador"}, {"id": "m11", "date": "2026-06-15T18:00", "stage": "Grupo H", "home": "Arabia Saudí", "away": "Uruguay"}, {"id": "m12", "date": "2026-06-15T12:00", "stage": "Grupo H", "home": "España", "away": "Cabo Verde"}, {"id": "m13", "date": "2026-06-15T22:00", "stage": "Grupo F", "home": "Suecia", "away": "Túnez"}, {"id": "m14", "date": "2026-06-16T21:00", "stage": "Grupo G", "home": "Irán", "away": "Nueva Zelanda"}, {"id": "m15", "date": "2026-06-16T15:00", "stage": "Grupo G", "home": "Bélgica", "away": "Egipto"}, {"id": "m16", "date": "2026-06-17T15:00", "stage": "Grupo I", "home": "Francia", "away": "Senegal"}, {"id": "m17", "date": "2026-06-17T18:00", "stage": "Grupo I", "home": "Irak", "away": "Noruega"}, {"id": "m18", "date": "2026-06-18T21:00", "stage": "Grupo J", "home": "Argentina", "away": "Argelia"}, {"id": "m19", "date": "2026-06-18T00:00", "stage": "Grupo J", "home": "Austria", "away": "Jordania"}, {"id": "m20", "date": "2026-06-19T19:00", "stage": "Grupo L", "home": "Inglaterra", "away": "Croacia"}, {"id": "m21", "date": "2026-06-19T16:00", "stage": "Grupo L", "home": "Ghana", "away": "Panamá"}, {"id": "m22", "date": "2026-06-20T13:00", "stage": "Grupo K", "home": "Portugal", "away": "RD Congo"}, {"id": "m23", "date": "2026-06-20T22:00", "stage": "Grupo K", "home": "Uzbekistán", "away": "Colombia"}, {"id": "m24", "date": "2026-06-28T15:00", "stage": "16avos", "home": "1A", "away": "2B"}, {"id": "m25", "date": "2026-06-28T18:00", "stage": "16avos", "home": "1F", "away": "2C"}, {"id": "m26", "date": "2026-06-29T13:00", "stage": "16avos", "home": "1C", "away": "2F"}, {"id": "m27", "date": "2026-06-29T16:00", "stage": "16avos", "home": "2E", "away": "2I"}, {"id": "m28", "date": "2026-06-30T13:00", "stage": "16avos", "home": "1J", "away": "2H"}, {"id": "m29", "date": "2026-06-30T19:00", "stage": "16avos", "home": "2K", "away": "2L"}, {"id": "m30", "date": "2026-07-01T14:00", "stage": "16avos", "home": "2D", "away": "2G"}, {"id": "m31", "date": "2026-07-01T21:30", "stage": "16avos", "home": "1K", "away": "3DEIJL"}, {"id": "m32", "date": "2026-07-04T12:00", "stage": "Octavos", "home": "Ganador 16avos 1", "away": "Ganador 16avos 2"}, {"id": "m33", "date": "2026-07-04T15:00", "stage": "Octavos", "home": "Ganador 16avos 3", "away": "Ganador 16avos 4"}, {"id": "m34", "date": "2026-07-04T20:00", "stage": "Octavos", "home": "Ganador 16avos 5", "away": "Ganador 16avos 6"}, {"id": "m35", "date": "2026-07-05T16:00", "stage": "Octavos", "home": "Ganador 16avos 7", "away": "Ganador 16avos 8"}, {"id": "m36", "date": "2026-07-09T15:00", "stage": "Cuartos", "home": "Ganador Octavos 1", "away": "Ganador Octavos 2"}, {"id": "m37", "date": "2026-07-09T21:00", "stage": "Cuartos", "home": "Ganador Octavos 3", "away": "Ganador Octavos 4"}, {"id": "m38", "date": "2026-07-14T15:00", "stage": "Semifinal", "home": "Ganador Cuartos 1", "away": "Ganador Cuartos 2"}, {"id": "m39", "date": "2026-07-15T15:00", "stage": "Semifinal", "home": "Ganador Cuartos 3", "away": "Ganador Cuartos 4"}, {"id": "m40", "date": "2026-07-18T15:00", "stage": "Tercer Lugar", "home": "Perdedor Semi 1", "away": "Perdedor Semi 2"}, {"id": "m41", "date": "2026-07-19T15:00", "stage": "Final", "home": "Ganador Semi 1", "away": "Ganador Semi 2"}];
-const KEY = "quiniela2026.newlook.v1";
+const KEY = "quiniela2026.fixed.v1";
+const PLAYERS_KEY = "quiniela2026.players.fixed.v1";
 const ADMIN_PASS = "2026";
+const API_URL = "https://script.google.com/macros/s/AKfycbxzlTFRjQXict4_2vlXLnJ4UAfRYWEv5qy4z6Br55dARotLuX7EV-0XKdAzEadKOesB/exec";
 
 let state = {
   predictions: {},
   real: {matches: {}, specials: {champion:"", runner:"", third:"", surprise:"", topScorer:""}},
   scores: []
 };
+
+function loadPlayers() {
+  const raw = localStorage.getItem(PLAYERS_KEY);
+  if(raw) {
+    try {
+      PLAYERS = JSON.parse(raw);
+    } catch(e) {}
+  }
+}
+
+function savePlayers() {
+  localStorage.setItem(PLAYERS_KEY, JSON.stringify(PLAYERS));
+}
 
 function load() {
   const raw = localStorage.getItem(KEY);
@@ -201,13 +231,36 @@ function flagFor(team) {
   return flags[team] || "🏳️";
 }
 
+function setCloudStatus(message) {
+  const el = document.getElementById("cloudStatus");
+  if(el) el.textContent = message;
+}
+
+function sheetPost(sheet, rows) {
+  setCloudStatus("☁️ Guardando en Google Sheets...");
+  return fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify({sheet, rows})
+  }).then(() => {
+    setCloudStatus("✅ Guardado en Google Sheets");
+    setTimeout(() => setCloudStatus("☁️ Google Sheets listo"), 2500);
+  }).catch(() => {
+    setCloudStatus("⚠️ No se pudo sincronizar");
+  });
+}
+
 function pointsFor(matchId, playerId) {
   const p = state.predictions[playerId]?.matches?.[matchId];
   const r = state.real.matches?.[matchId];
   if(!p || !r || r.home==="" || r.away==="" || r.home==null || r.away==null) return {total:0, exact:0, winner:0, scorers:0, reason:"Sin resultado real"};
   let total=0, exact=0, winner=0, scorers=0, reason=[];
-  if(Number(p.home)===Number(r.home) && Number(p.away)===Number(r.away)) { exact=3; total+=3; reason.push("Marcador exacto +3"); }
-  else if(outcome(p.home,p.away)===outcome(r.home,r.away)) { winner=2; total+=2; reason.push("Ganador/empate +2"); }
+  if(Number(p.home)===Number(r.home) && Number(p.away)===Number(r.away)) {
+    exact=3; total+=3; reason.push("Marcador exacto +3");
+  } else if(outcome(p.home,p.away)===outcome(r.home,r.away)) {
+    winner=2; total+=2; reason.push("Solo ganador/empate +2");
+  }
   scorers = split(p.scorers).filter(x => split(r.scorers).includes(x)).length;
   if(scorers) { total += scorers; reason.push("Goleadores +" + scorers); }
   return {total, exact, winner, scorers, reason: reason.join(" | ") || "Sin puntos"};
@@ -238,30 +291,35 @@ function calculate() {
 function goSheet(id) {
   document.querySelectorAll(".sheet").forEach(s => s.classList.toggle("active", s.id === id));
   document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
-  [...document.querySelectorAll(".nav button")].find(b => b.getAttribute("onclick").includes("'" + id + "'")).classList.add("active");
+  const btn = [...document.querySelectorAll(".nav button")].find(b => b.getAttribute("onclick").includes("'" + id + "'"));
+  if(btn) btn.classList.add("active");
   renderAll();
 }
 
 function selectOptions() {
   const pOpts = PLAYERS.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
   ["detailPlayer","entryPlayer","specialPlayer"].forEach(id => {
-    const el=document.getElementById(id), old=el.value; el.innerHTML=pOpts; if(PLAYERS.some(p=>p.id===old)) el.value=old;
+    const el=document.getElementById(id);
+    if(!el) return;
+    const old=el.value; el.innerHTML=pOpts; if(PLAYERS.some(p=>p.id===old)) el.value=old;
   });
   const dOpts = days().map(d => `<option value="${d}">${dateLabel(d)}</option>`).join("");
   ["entryDay","realDay"].forEach(id => {
-    const el=document.getElementById(id), old=el.value; el.innerHTML=dOpts; if(days().includes(old)) el.value=old;
+    const el=document.getElementById(id);
+    if(!el) return;
+    const old=el.value; el.innerHTML=dOpts; if(days().includes(old)) el.value=old;
   });
 }
 
 function renderStandings() {
-  const html = `<table><thead><tr>
-  <th>Posición</th><th>Jugador</th><th>Marcadores Exactos (3)</th><th>Solo el ganador (2)</th><th>Quien meta gol (1)</th>
+  standings.innerHTML = `<table><thead><tr>
+  <th>Posición</th><th>Jugador</th><th>Marcadores Exactos (3)</th><th>Solo el ganador / empate (2)</th><th>Quien meta gol (1)</th>
   <th>Campeón Mundial (20)</th><th>Subcampeón (15)</th><th>Goleador del torneo (15)</th><th>Tercer lugar (10)</th><th>Revelación (10)</th><th>Total</th>
   </tr></thead><tbody>${state.scores.map((s,i)=>`<tr class="${i===0?'leader':''}">
   <td>${i===0?'🥇':i+1}</td><td><strong>${s.name}</strong></td><td>${s.exact}</td><td>${s.winner}</td><td>${s.scorers}</td>
   <td>${s.champion}</td><td>${s.runner}</td><td>${s.topScorer}</td><td>${s.third}</td><td>${s.surprise}</td><td><strong>${s.total}</strong></td>
-  </tr>`).join("")}</tbody></table>`;
-  standings.innerHTML = html;
+  </tr>`).join("")}</tbody></table>
+  <p class="muted small">Regla: marcador exacto suma 3 puntos. Si no pega el marcador exacto pero sí ganador/empate, suma 2 puntos.</p>`;
   kpiLeader.textContent = state.scores[0] ? `${state.scores[0].name} · ${state.scores[0].total} pts` : "Sin datos";
   kpiMatches.textContent = MATCHES.length;
   kpiPlayers.textContent = PLAYERS.length;
@@ -269,7 +327,9 @@ function renderStandings() {
 }
 
 function renderDetails() {
-  const pid = detailPlayer.value; ensurePlayer(pid);
+  const pid = detailPlayer.value; 
+  if(!pid) { playerDetails.innerHTML = "<p class='muted'>No hay jugadores registrados.</p>"; return; }
+  ensurePlayer(pid);
   const rows = MATCHES.map(m => {
     const p = state.predictions[pid].matches[m.id];
     const r = state.real.matches[m.id];
@@ -301,13 +361,16 @@ function renderMatchInput(m, p, prefix) {
 }
 
 function renderEntries() {
-  const pid = entryPlayer.value, d = entryDay.value; ensurePlayer(pid);
-  const list = MATCHES.filter(m => dayOf(m.date) === d);
-  entryMatches.innerHTML = list.map(m => renderMatchInput(m, state.predictions[pid].matches[m.id], "p")).join("");
+  const pid = entryPlayer.value, d = entryDay.value; 
+  if(!pid) { entryMatches.innerHTML = "<p class='muted'>No hay jugadores registrados.</p>"; return; }
+  ensurePlayer(pid);
+  entryMatches.innerHTML = MATCHES.filter(m => dayOf(m.date) === d).map(m => renderMatchInput(m, state.predictions[pid].matches[m.id], "p")).join("");
 }
 
 function saveEntries() {
-  const pid = entryPlayer.value, d = entryDay.value; ensurePlayer(pid);
+  const pid = entryPlayer.value, d = entryDay.value; 
+  if(!pid) return alert("Primero agrega o selecciona un jugador.");
+  ensurePlayer(pid);
   MATCHES.filter(m => dayOf(m.date) === d).forEach(m => {
     state.predictions[pid].matches[m.id] = {
       home: document.querySelector(`[data-ph="${m.id}"]`).value,
@@ -315,62 +378,161 @@ function saveEntries() {
       scorers: document.querySelector(`[data-ps="${m.id}"]`).value.trim()
     };
   });
-  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Predicciones guardadas y enviadas a Google Sheets.");
+  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Predicciones guardadas.");
 }
 
 function renderRealEntries() {
-  const d = realDay.value;
-  realMatches.innerHTML = MATCHES.filter(m => dayOf(m.date) === d).map(m => renderMatchInput(m, state.real.matches[m.id], "r")).join("");
+  realMatches.innerHTML = MATCHES.filter(m => dayOf(m.date) === realDay.value).map(m => renderMatchInput(m, state.real.matches[m.id], "r")).join("");
 }
 
 function saveRealEntries() {
-  const d = realDay.value;
-  MATCHES.filter(m => dayOf(m.date) === d).forEach(m => {
+  MATCHES.filter(m => dayOf(m.date) === realDay.value).forEach(m => {
     state.real.matches[m.id] = {
       home: document.querySelector(`[data-rh="${m.id}"]`).value,
       away: document.querySelector(`[data-ra="${m.id}"]`).value,
       scorers: document.querySelector(`[data-rs="${m.id}"]`).value.trim()
     };
   });
-  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Resultados reales guardados y enviados a Google Sheets.");
+  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Resultados reales guardados.");
 }
 
 function renderSpecials() {
-  const pid = specialPlayer.value; ensurePlayer(pid);
-  const s = state.predictions[pid].specials;
-  spChampion.value = s.champion || ""; spRunner.value = s.runner || ""; spThird.value = s.third || ""; spSurprise.value = s.surprise || ""; spTopScorer.value = s.topScorer || "";
+  const pid = specialPlayer.value; 
+  if(pid) {
+    ensurePlayer(pid);
+    const s = state.predictions[pid].specials;
+    spChampion.value = s.champion || ""; spRunner.value = s.runner || ""; spThird.value = s.third || ""; spSurprise.value = s.surprise || ""; spTopScorer.value = s.topScorer || "";
+  }
   realChampion.value = state.real.specials.champion || ""; realRunner.value = state.real.specials.runner || ""; realThird.value = state.real.specials.third || ""; realSurprise.value = state.real.specials.surprise || ""; realTopScorer.value = state.real.specials.topScorer || "";
 }
 
 function saveSpecials() {
-  const pid = specialPlayer.value; ensurePlayer(pid);
+  const pid = specialPlayer.value; 
+  if(!pid) return alert("Primero agrega o selecciona un jugador.");
+  ensurePlayer(pid);
   state.predictions[pid].specials = {champion: spChampion.value.trim(), runner: spRunner.value.trim(), third: spThird.value.trim(), surprise: spSurprise.value.trim(), topScorer: spTopScorer.value.trim()};
-  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Especiales guardados y enviados a Google Sheets.");
+  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Especiales guardados.");
 }
 
 function saveRealSpecials() {
   state.real.specials = {champion: realChampion.value.trim(), runner: realRunner.value.trim(), third: realThird.value.trim(), surprise: realSurprise.value.trim(), topScorer: realTopScorer.value.trim()};
-  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Resultados especiales reales guardados y enviados a Google Sheets.");
+  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Resultados especiales reales guardados.");
 }
 
 function adminOK() {
-  if(adminPass.value !== ADMIN_PASS) { alert("Clave incorrecta."); return false; }
+  const pass = document.getElementById("adminPass").value;
+  if(pass !== ADMIN_PASS) { alert("Clave incorrecta."); return false; }
   return true;
+}
+
+function addNewPlayer() {
+  if(!adminOK()) return;
+  const input = document.getElementById("newPlayerName");
+  const name = input.value.trim();
+  if(!name) return alert("Escribe el nombre del jugador.");
+  if(PLAYERS.some(p => norm(p.name) === norm(name))) return alert("Ese jugador ya existe.");
+  const id = "p" + Date.now();
+  PLAYERS.push({id, name});
+  ensurePlayer(id);
+  savePlayers();
+  save();
+  input.value = "";
+  calculate();
+  renderAll();
+  syncAllToGoogleSheets();
+  alert("Jugador agregado correctamente.");
+}
+
+function removePlayer(id) {
+  if(!adminOK()) return;
+  const player = PLAYERS.find(p => p.id === id);
+  if(!player) return;
+  if(!confirm("¿Eliminar jugador " + player.name + "?")) return;
+  PLAYERS = PLAYERS.filter(p => p.id !== id);
+  delete state.predictions[id];
+  savePlayers();
+  save();
+  calculate();
+  renderAll();
+  syncAllToGoogleSheets();
+}
+
+function renderPlayersAdmin() {
+  const box = document.getElementById("playersAdminList");
+  if(!box) return;
+  box.innerHTML = PLAYERS.map(p => `
+    <div class="player-row" style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px">
+      <strong>${p.name}</strong>
+      <button class="danger" onclick="removePlayer('${p.id}')">Eliminar</button>
+    </div>
+  `).join("");
 }
 
 function esc(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
+function buildPrediccionesRows() {
+  const rows = [["FechaRegistro","Jugador","FechaPartido","Fase","Equipo1","Equipo2","PrediccionEquipo1","PrediccionEquipo2","GoleadoresPronosticados"]];
+  PLAYERS.forEach(player => {
+    const preds = state.predictions[player.id]?.matches || {};
+    MATCHES.forEach(match => {
+      const p = preds[match.id];
+      if(!p) return;
+      rows.push([new Date().toLocaleString("es-CR"), player.name, match.date, match.stage, match.home, match.away, p.home || "", p.away || "", p.scorers || ""]);
+    });
+  });
+  return rows;
+}
+
+function buildResultadosRows() {
+  const rows = [["FechaRegistro","FechaPartido","Fase","Equipo1","Equipo2","ResultadoEquipo1","ResultadoEquipo2","GoleadoresReales"]];
+  MATCHES.forEach(match => {
+    const r = state.real.matches[match.id];
+    if(!r) return;
+    rows.push([new Date().toLocaleString("es-CR"), match.date, match.stage, match.home, match.away, r.home || "", r.away || "", r.scorers || ""]);
+  });
+  return rows;
+}
+
+function buildEspecialesRows() {
+  const rows = [["FechaRegistro","Tipo","Jugador","Campeon","Subcampeon","TercerLugar","Revelacion","GoleadorTorneo"]];
+  PLAYERS.forEach(player => {
+    const s = state.predictions[player.id]?.specials || {};
+    rows.push([new Date().toLocaleString("es-CR"), "PrediccionJugador", player.name, s.champion || "", s.runner || "", s.third || "", s.surprise || "", s.topScorer || ""]);
+  });
+  const rs = state.real.specials || {};
+  rows.push([new Date().toLocaleString("es-CR"), "ResultadoReal", "Administrador", rs.champion || "", rs.runner || "", rs.third || "", rs.surprise || "", rs.topScorer || ""]);
+  return rows;
+}
+
+function buildTablaRows() {
+  calculate();
+  const rows = [["Posicion","Jugador","MarcadoresExactos_3","SoloGanadorEmpate_2","QuienMetaGol_1","CampeonMundial_20","Subcampeon_15","GoleadorTorneo_15","TercerLugar_10","Revelacion_10","Total"]];
+  state.scores.forEach((s,i) => rows.push([i+1, s.name, s.exact, s.winner, s.scorers, s.champion, s.runner, s.topScorer, s.third, s.surprise, s.total]));
+  return rows;
+}
+
+function buildJugadoresRows() {
+  const rows = [["ID","Jugador"]];
+  PLAYERS.forEach(p => rows.push([p.id, p.name]));
+  return rows;
+}
+
+function syncAllToGoogleSheets() {
+  return Promise.all([
+    sheetPost("Jugadores", buildJugadoresRows()),
+    sheetPost("Predicciones", buildPrediccionesRows()),
+    sheetPost("Resultados", buildResultadosRows()),
+    sheetPost("Especiales", buildEspecialesRows()),
+    sheetPost("TablaGeneral", buildTablaRows())
+  ]);
+}
+
 function downloadExcel() {
   if(!adminOK()) return;
   calculate();
-  let standingsRows = `<tr><th>Posición</th><th>Jugador</th><th>Marcadores Exactos (3)</th><th>Solo el ganador (2)</th><th>Quien meta gol (1)</th><th>Campeón Mundial (20)</th><th>Subcampeón (15)</th><th>Goleador torneo (15)</th><th>Tercer lugar (10)</th><th>Revelación (10)</th><th>Total</th></tr>`;
+  let standingsRows = `<tr><th>Posición</th><th>Jugador</th><th>Marcadores Exactos (3)</th><th>Solo el ganador / empate (2)</th><th>Quien meta gol (1)</th><th>Campeón Mundial (20)</th><th>Subcampeón (15)</th><th>Goleador torneo (15)</th><th>Tercer lugar (10)</th><th>Revelación (10)</th><th>Total</th></tr>`;
   state.scores.forEach((s,i)=> standingsRows += `<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${s.exact}</td><td>${s.winner}</td><td>${s.scorers}</td><td>${s.champion}</td><td>${s.runner}</td><td>${s.topScorer}</td><td>${s.third}</td><td>${s.surprise}</td><td>${s.total}</td></tr>`);
-  let detailRows = `<tr><th>Jugador</th><th>Partido</th><th>Predicción</th><th>Resultado real</th><th>Puntos</th></tr>`;
-  PLAYERS.forEach(pl => MATCHES.forEach(m => {
-    const p = state.predictions[pl.id]?.matches?.[m.id], r = state.real.matches[m.id], pts = pointsFor(m.id, pl.id);
-    detailRows += `<tr><td>${esc(pl.name)}</td><td>${esc(m.stage + " - " + m.home + " vs " + m.away)}</td><td>${esc(p ? (p.home+"-"+p.away+" | "+(p.scorers||"")) : "")}</td><td>${esc(r ? (r.home+"-"+r.away+" | "+(r.scorers||"")) : "")}</td><td>${pts.total}</td></tr>`;
-  }));
-  const content = `<html><head><meta charset="UTF-8"></head><body><h2>Reporte Quiniela Mundial 2026</h2><h3>Tabla</h3><table border="1">${standingsRows}</table><h3>Detalle</h3><table border="1">${detailRows}</table></body></html>`;
+  const content = `<html><head><meta charset="UTF-8"></head><body><h2>Reporte Quiniela Mundial 2026</h2><table border="1">${standingsRows}</table></body></html>`;
   const blob = new Blob([content], {type:"application/vnd.ms-excel;charset=utf-8;"});
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "reporte-quiniela-mundial-2026.xls"; a.click(); URL.revokeObjectURL(a.href);
 }
@@ -379,7 +541,8 @@ function resetSecure() {
   if(!adminOK()) return;
   if(!confirm("¿Seguro que deseas resetear toda la quiniela a 0?")) return;
   state = {predictions: {}, real: {matches: {}, specials: {champion:"", runner:"", third:"", surprise:"", topScorer:""}}, scores: []};
-  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Quiniela reseteada y Google Sheets actualizado.");
+  PLAYERS.forEach(p => ensurePlayer(p.id));
+  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Quiniela reseteada.");
 }
 
 function renderAll() {
@@ -390,185 +553,12 @@ function renderAll() {
   renderEntries();
   renderRealEntries();
   renderSpecials();
+  renderPlayersAdmin();
 }
 
-
-const API_URL = "https://script.google.com/macros/s/AKfycbxzlTFRjQXict4_2vlXLnJ4UAfRYWEv5qy4z6Br55dARotLuX7EV-0XKdAzEadKOesB/exec";
-
-function setCloudStatus(message) {
-  const el = document.getElementById("cloudStatus");
-  if (el) el.textContent = message;
-}
-
-function sheetPost(sheet, rows) {
-  setCloudStatus("☁️ Guardando en Google Sheets...");
-  return fetch(API_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify({ sheet, rows })
-  }).then(() => {
-    setCloudStatus("✅ Guardado en Google Sheets");
-    setTimeout(() => setCloudStatus("☁️ Google Sheets listo"), 2500);
-  }).catch(() => {
-    setCloudStatus("⚠️ No se pudo sincronizar");
-  });
-}
-
-function buildPrediccionesRows() {
-  const rows = [[
-    "FechaRegistro",
-    "Jugador",
-    "FechaPartido",
-    "Fase",
-    "Equipo1",
-    "Equipo2",
-    "PrediccionEquipo1",
-    "PrediccionEquipo2",
-    "GoleadoresPronosticados"
-  ]];
-
-  PLAYERS.forEach(player => {
-    const preds = state.predictions[player.id]?.matches || {};
-    MATCHES.forEach(match => {
-      const p = preds[match.id];
-      if (!p) return;
-      rows.push([
-        new Date().toLocaleString("es-CR"),
-        player.name,
-        match.date,
-        match.stage,
-        match.home,
-        match.away,
-        p.home || "",
-        p.away || "",
-        p.scorers || ""
-      ]);
-    });
-  });
-
-  return rows;
-}
-
-function buildResultadosRows() {
-  const rows = [[
-    "FechaRegistro",
-    "FechaPartido",
-    "Fase",
-    "Equipo1",
-    "Equipo2",
-    "ResultadoEquipo1",
-    "ResultadoEquipo2",
-    "GoleadoresReales"
-  ]];
-
-  MATCHES.forEach(match => {
-    const r = state.real?.matches?.[match.id];
-    if (!r) return;
-    rows.push([
-      new Date().toLocaleString("es-CR"),
-      match.date,
-      match.stage,
-      match.home,
-      match.away,
-      r.home || "",
-      r.away || "",
-      r.scorers || ""
-    ]);
-  });
-
-  return rows;
-}
-
-function buildEspecialesRows() {
-  const rows = [[
-    "FechaRegistro",
-    "Tipo",
-    "Jugador",
-    "Campeon",
-    "Subcampeon",
-    "TercerLugar",
-    "Revelacion",
-    "GoleadorTorneo"
-  ]];
-
-  PLAYERS.forEach(player => {
-    const s = state.predictions[player.id]?.specials || {};
-    rows.push([
-      new Date().toLocaleString("es-CR"),
-      "PrediccionJugador",
-      player.name,
-      s.champion || "",
-      s.runner || "",
-      s.third || "",
-      s.surprise || "",
-      s.topScorer || ""
-    ]);
-  });
-
-  const rs = state.real?.specials || {};
-  rows.push([
-    new Date().toLocaleString("es-CR"),
-    "ResultadoReal",
-    "Administrador",
-    rs.champion || "",
-    rs.runner || "",
-    rs.third || "",
-    rs.surprise || "",
-    rs.topScorer || ""
-  ]);
-
-  return rows;
-}
-
-function buildTablaRows() {
-  calculate();
-
-  const rows = [[
-    "Posicion",
-    "Jugador",
-    "MarcadoresExactos_3",
-    "SoloGanadorEmpate_2",
-    "QuienMetaGol_1",
-    "CampeonMundial_20",
-    "Subcampeon_15",
-    "GoleadorTorneo_15",
-    "TercerLugar_10",
-    "Revelacion_10",
-    "Total"
-  ]];
-
-  state.scores.forEach((s, i) => {
-    rows.push([
-      i + 1,
-      s.name,
-      s.exact,
-      s.winner,
-      s.scorers,
-      s.champion,
-      s.runner,
-      s.topScorer,
-      s.third,
-      s.surprise,
-      s.total
-    ]);
-  });
-
-  return rows;
-}
-
-function syncAllToGoogleSheets() {
-  return Promise.all([
-    sheetPost("Predicciones", buildPrediccionesRows()),
-    sheetPost("Resultados", buildResultadosRows()),
-    sheetPost("Especiales", buildEspecialesRows()),
-    sheetPost("TablaGeneral", buildTablaRows())
-  ]);
-}
-
+loadPlayers();
 load();
+PLAYERS.forEach(p => ensurePlayer(p.id));
 renderAll();
 </script>
 </body>
