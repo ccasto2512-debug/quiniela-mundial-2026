@@ -62,6 +62,15 @@ th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-
   line-height:1.45;
   margin-top:12px;
 }
+
+.sync-note{
+  background:#0b1628;
+  border:1px solid #2a3b58;
+  border-radius:16px;
+  padding:12px;
+  color:#bfdbfe;
+  margin-top:12px;
+}
 </style>
 </head>
 <body>
@@ -179,6 +188,8 @@ th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-
 <div class="actions">
 <button class="success" onclick="downloadExcel()">Descargar reporte Excel</button>
 <button class="primary" onclick="syncAllToGoogleSheets()">Guardar todo en Google Sheets</button>
+<button class="success" onclick="loadFromGoogleSheets(false)">Cargar datos desde Google Sheets</button>
+<button class="warning" onclick="toggleAutoRefresh()">Activar / pausar actualización automática</button>
 <button class="warning" onclick="testGoogleSheetsConnection()">Probar conexión Google Sheets</button>
 <button class="danger" onclick="resetSecure()">Resetear todo a 0</button>
 </div>
@@ -659,6 +670,270 @@ function fallbackCopy(text) {
   document.execCommand("copy");
   document.body.removeChild(area);
   alert("Mensaje copiado. Ya puedes pegarlo en WhatsApp.");
+}
+
+
+let autoRefreshEnabled = true;
+let autoRefreshTimer = null;
+
+function jsonpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "jsonp_callback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+    const separator = url.includes("?") ? "&" : "?";
+    const script = document.createElement("script");
+
+    window[callbackName] = function(data) {
+      delete window[callbackName];
+      if (script.parentNode) document.body.removeChild(script);
+      resolve(data);
+    };
+
+    script.onerror = function() {
+      delete window[callbackName];
+      if (script.parentNode) document.body.removeChild(script);
+      reject(new Error("No se pudo leer Google Sheets"));
+    };
+
+    script.src = url + separator + "callback=" + callbackName + "&t=" + Date.now();
+    document.body.appendChild(script);
+  });
+}
+
+function idx(headers, names) {
+  for (const name of names) {
+    const i = headers.findIndex(h => norm(h) === norm(name));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+function findOrCreatePlayerByName(name) {
+  if (!name) return null;
+
+  let player = PLAYERS.find(p => norm(p.name) === norm(name));
+  if (player) return player;
+
+  player = {
+    id: "p" + Date.now() + Math.floor(Math.random() * 10000),
+    name: String(name).trim()
+  };
+
+  PLAYERS.push(player);
+  return player;
+}
+
+function findMatchByRow(dateValue, home, away) {
+  const dateStr = String(dateValue || "").slice(0, 10);
+  const h = norm(home);
+  const a = norm(away);
+
+  return MATCHES.find(m =>
+    String(m.date || "").slice(0, 10) === dateStr &&
+    norm(m.home) === h &&
+    norm(m.away) === a
+  );
+}
+
+function loadPlayersFromSheet(rows) {
+  if (!rows || rows.length < 2) return;
+
+  const headers = rows[0].map(x => String(x || ""));
+  const idIndex = idx(headers, ["ID", "Id"]);
+  const nameIndex = idx(headers, ["Jugador", "Nombre"]);
+
+  if (nameIndex < 0) return;
+
+  const loaded = [];
+
+  rows.slice(1).forEach(row => {
+    const name = row[nameIndex];
+    if (!name) return;
+
+    loaded.push({
+      id: String(row[idIndex] || ("p" + Date.now() + Math.floor(Math.random() * 10000))),
+      name: String(name).trim()
+    });
+  });
+
+  if (loaded.length) {
+    PLAYERS = loaded;
+    savePlayers();
+  }
+}
+
+function loadPredictionsFromSheet(rows) {
+  if (!rows || rows.length < 2) return;
+
+  const headers = rows[0].map(x => String(x || ""));
+
+  const playerIndex = idx(headers, ["Jugador"]);
+  const dateIndex = idx(headers, ["FechaPartido"]);
+  const homeIndex = idx(headers, ["Equipo1"]);
+  const awayIndex = idx(headers, ["Equipo2"]);
+  const predHomeIndex = idx(headers, ["PrediccionEquipo1"]);
+  const predAwayIndex = idx(headers, ["PrediccionEquipo2"]);
+  const scorersIndex = idx(headers, ["GoleadoresPronosticados"]);
+
+  if (playerIndex < 0 || dateIndex < 0 || homeIndex < 0 || awayIndex < 0) return;
+
+  rows.slice(1).forEach(row => {
+    const player = findOrCreatePlayerByName(row[playerIndex]);
+    const match = findMatchByRow(row[dateIndex], row[homeIndex], row[awayIndex]);
+
+    if (!player || !match) return;
+
+    ensurePlayer(player.id);
+
+    state.predictions[player.id].matches[match.id] = {
+      home: row[predHomeIndex] ?? "",
+      away: row[predAwayIndex] ?? "",
+      scorers: row[scorersIndex] ?? ""
+    };
+  });
+}
+
+function loadResultsFromSheet(rows) {
+  if (!rows || rows.length < 2) return;
+
+  const headers = rows[0].map(x => String(x || ""));
+
+  const dateIndex = idx(headers, ["FechaPartido"]);
+  const homeIndex = idx(headers, ["Equipo1"]);
+  const awayIndex = idx(headers, ["Equipo2"]);
+  const realHomeIndex = idx(headers, ["ResultadoEquipo1"]);
+  const realAwayIndex = idx(headers, ["ResultadoEquipo2"]);
+  const scorersIndex = idx(headers, ["GoleadoresReales"]);
+
+  if (dateIndex < 0 || homeIndex < 0 || awayIndex < 0) return;
+
+  rows.slice(1).forEach(row => {
+    const match = findMatchByRow(row[dateIndex], row[homeIndex], row[awayIndex]);
+
+    if (!match) return;
+
+    state.real.matches[match.id] = {
+      home: row[realHomeIndex] ?? "",
+      away: row[realAwayIndex] ?? "",
+      scorers: row[scorersIndex] ?? ""
+    };
+  });
+}
+
+function loadSpecialsFromSheet(rows) {
+  if (!rows || rows.length < 2) return;
+
+  const headers = rows[0].map(x => String(x || ""));
+
+  const typeIndex = idx(headers, ["Tipo"]);
+  const playerIndex = idx(headers, ["Jugador"]);
+  const championIndex = idx(headers, ["Campeon", "Campeón"]);
+  const runnerIndex = idx(headers, ["Subcampeon", "Subcampeón"]);
+  const thirdIndex = idx(headers, ["TercerLugar", "Tercer Lugar"]);
+  const surpriseIndex = idx(headers, ["Revelacion", "Revelación"]);
+  const scorerIndex = idx(headers, ["GoleadorTorneo", "Goleador Torneo"]);
+
+  rows.slice(1).forEach(row => {
+    const type = String(row[typeIndex] || "");
+
+    if (norm(type) === norm("ResultadoReal")) {
+      state.real.specials = {
+        champion: row[championIndex] || "",
+        runner: row[runnerIndex] || "",
+        third: row[thirdIndex] || "",
+        surprise: row[surpriseIndex] || "",
+        topScorer: row[scorerIndex] || ""
+      };
+      return;
+    }
+
+    const player = findOrCreatePlayerByName(row[playerIndex]);
+
+    if (!player) return;
+
+    ensurePlayer(player.id);
+
+    state.predictions[player.id].specials = {
+      champion: row[championIndex] || "",
+      runner: row[runnerIndex] || "",
+      third: row[thirdIndex] || "",
+      surprise: row[surpriseIndex] || "",
+      topScorer: row[scorerIndex] || ""
+    };
+  });
+}
+
+async function loadFromGoogleSheets(silent = true) {
+  try {
+    if (!silent) setCloudStatus("☁️ Cargando desde Google Sheets...");
+
+    const response = await jsonpRequest(API_URL);
+
+    if (!response || !response.ok || !response.data) {
+      throw new Error("Respuesta inválida");
+    }
+
+    state.predictions = {};
+    state.real = {
+      matches: {},
+      specials: {
+        champion: "",
+        runner: "",
+        third: "",
+        surprise: "",
+        topScorer: ""
+      }
+    };
+
+    loadPlayersFromSheet(response.data.Jugadores);
+    PLAYERS.forEach(p => ensurePlayer(p.id));
+
+    loadPredictionsFromSheet(response.data.Predicciones);
+    loadResultsFromSheet(response.data.Resultados);
+    loadSpecialsFromSheet(response.data.Especiales);
+
+    PLAYERS.forEach(p => ensurePlayer(p.id));
+
+    calculate();
+    savePlayers();
+    save();
+    renderAll();
+
+    setCloudStatus("✅ Datos cargados desde Google Sheets");
+    setTimeout(() => setCloudStatus(autoRefreshEnabled ? "☁️ Auto actualización activa" : "☁️ Google Sheets listo"), 2500);
+
+  } catch (error) {
+    console.error(error);
+    setCloudStatus("⚠️ No se pudo cargar Google Sheets");
+    if (!silent) alert("No se pudo cargar desde Google Sheets. Revisa Apps Script.");
+  }
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled = !autoRefreshEnabled;
+
+  if (autoRefreshEnabled) {
+    startAutoRefresh();
+    setCloudStatus("☁️ Auto actualización activa");
+  } else {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+    setCloudStatus("⏸️ Auto actualización pausada");
+  }
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+  autoRefreshTimer = setInterval(() => {
+    if (!autoRefreshEnabled) return;
+
+    const active = document.activeElement;
+    const editing = active && ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
+
+    if (!editing) {
+      loadFromGoogleSheets(true);
+    }
+  }, 30000);
 }
 
 function renderAll() {
