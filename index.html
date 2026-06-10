@@ -254,6 +254,10 @@ function load() {
 }
 
 function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+function showScoreValue(v) {
+  return v === 0 || v === "0" ? "0" : (v ?? "");
+}
+
 function norm(v) { return String(v||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
 function split(v) { return String(v||"").split(",").map(norm).filter(Boolean); }
 function dayOf(d) { return d.slice(0,10); }
@@ -397,8 +401,8 @@ function renderDetails() {
     return `<div class="detail-card">
       <div class="detail-grid">
         <div><strong>${m.home} vs ${m.away}</strong><div class="muted small">${m.stage} · ${dateLabel(dayOf(m.date))} · ${timeLabel(m.date)} CR</div></div>
-        <div><span class="muted small">Predicción</span><br><strong>${p ? `${p.home||""} - ${p.away||""}` : "Sin predicción"}</strong><br><span class="small muted">${p?.scorers ? "Goles: " + p.scorers : ""}</span></div>
-        <div><span class="muted small">Real</span><br><strong>${r ? `${r.home||""} - ${r.away||""}` : "Sin resultado"}</strong><br><span class="small muted">${r?.scorers ? "Goles: " + r.scorers : ""}</span></div>
+        <div><span class="muted small">Predicción</span><br><strong>${p ? `${showScoreValue(p.home)} - ${showScoreValue(p.away)}` : "Sin predicción"}</strong><br><span class="small muted">${p?.scorers ? "Goles: " + p.scorers : ""}</span></div>
+        <div><span class="muted small">Real</span><br><strong>${r ? `${showScoreValue(r.home)} - ${showScoreValue(r.away)}` : "Sin resultado"}</strong><br><span class="small muted">${r?.scorers ? "Goles: " + r.scorers : ""}</span></div>
         <div><span class="score-pill">${pts.total} pts</span><br><span class="small muted">${pts.reason}</span></div>
       </div>
     </div>`;
@@ -536,7 +540,7 @@ function buildPrediccionesRows() {
     MATCHES.forEach(match => {
       const p = preds[match.id];
       if(!p) return;
-      rows.push([new Date().toLocaleString("es-CR"), player.name, match.date, match.stage, match.venue || "", match.home, match.away, p.home || "", p.away || "", p.scorers || ""]);
+      rows.push([new Date().toLocaleString("es-CR"), player.name, match.date, match.stage, match.venue || "", match.home, match.away, p.home ?? "", p.away ?? "", p.scorers || ""]);
     });
   });
   return rows;
@@ -547,7 +551,7 @@ function buildResultadosRows() {
   MATCHES.forEach(match => {
     const r = state.real.matches[match.id];
     if(!r) return;
-    rows.push([new Date().toLocaleString("es-CR"), match.date, match.stage, match.venue || "", match.home, match.away, r.home || "", r.away || "", r.scorers || ""]);
+    rows.push([new Date().toLocaleString("es-CR"), match.date, match.stage, match.venue || "", match.home, match.away, r.home ?? "", r.away ?? "", r.scorers || ""]);
   });
   return rows;
 }
