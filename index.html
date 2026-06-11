@@ -294,6 +294,8 @@ function setCloudStatus(message) {
 }
 
 function sheetPost(sheet, rows) {
+  setCloudStatus("☁️ Guardando en Google Sheets...");
+
   const formData = new FormData();
   formData.append("sheet", sheet);
   formData.append("rows", JSON.stringify(rows));
@@ -302,6 +304,13 @@ function sheetPost(sheet, rows) {
     method: "POST",
     mode: "no-cors",
     body: formData
+  }).then(() => {
+    setCloudStatus("✅ Enviado a Google Sheets");
+    setTimeout(() => setCloudStatus("☁️ Google Sheets listo"), 2500);
+  }).catch((error) => {
+    console.error("Error Google Sheets:", error);
+    setCloudStatus("⚠️ No se pudo sincronizar");
+    alert("No se pudo enviar a Google Sheets. Revisa el Apps Script.");
   });
 }
 
@@ -427,6 +436,9 @@ async function saveEntries() {
 
   if (!pid) return alert("Primero agrega o selecciona un jugador.");
 
+  const player = PLAYERS.find(p => p.id === pid);
+  if (!player) return alert("Jugador no encontrado.");
+
   ensurePlayer(pid);
 
   const dayMatches = MATCHES.filter(m => dayOf(m.date) === d);
@@ -449,9 +461,19 @@ async function saveEntries() {
   save();
   renderAll();
 
-  await syncReloadAndResume();
-
-  alert("Predicciones del día guardadas y sincronizadas para todos.");
+  try {
+    setCloudStatus("☁️ Guardando predicciones del día...");
+    await savePlayersToCloud();
+    await savePredictionsDayToCloud(player, dayMatches);
+    await saveTablaToCloud();
+    setCloudStatus("✅ Predicciones sincronizadas");
+    await loadFromGoogleSheets(true);
+    alert("Predicciones del día guardadas y sincronizadas para todos.");
+  } catch (error) {
+    console.error(error);
+    setCloudStatus("⚠️ Error al guardar");
+    alert("No se pudo sincronizar con Google Sheets.");
+  }
 }
 
 function renderRealEntries() {
@@ -480,9 +502,18 @@ async function saveRealEntries() {
   save();
   renderAll();
 
-  await syncReloadAndResume();
-
-  alert("Resultados reales guardados y sincronizados para todos.");
+  try {
+    setCloudStatus("☁️ Guardando resultados del día...");
+    await saveResultsDayToCloud(dayMatches);
+    await saveTablaToCloud();
+    setCloudStatus("✅ Resultados sincronizados");
+    await loadFromGoogleSheets(true);
+    alert("Resultados reales guardados y sincronizados para todos.");
+  } catch (error) {
+    console.error(error);
+    setCloudStatus("⚠️ Error al guardar");
+    alert("No se pudo sincronizar con Google Sheets.");
+  }
 }
 
 function renderSpecials() {
@@ -500,12 +531,12 @@ async function saveSpecials() {
   if(!pid) return alert("Primero agrega o selecciona un jugador.");
   ensurePlayer(pid);
   state.predictions[pid].specials = {champion: spChampion.value.trim(), runner: spRunner.value.trim(), third: spThird.value.trim(), surprise: spSurprise.value.trim(), topScorer: spTopScorer.value.trim()};
-  calculate(); save(); renderAll(); await syncReloadAndResume(); alert("Especiales guardados y sincronizados para todos.");
+  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Especiales guardados.");
 }
 
 async function saveRealSpecials() {
   state.real.specials = {champion: realChampion.value.trim(), runner: realRunner.value.trim(), third: realThird.value.trim(), surprise: realSurprise.value.trim(), topScorer: realTopScorer.value.trim()};
-  calculate(); save(); renderAll(); await syncReloadAndResume(); alert("Resultados especiales reales guardados y sincronizados para todos.");
+  calculate(); save(); renderAll(); syncAllToGoogleSheets(); alert("Resultados especiales reales guardados.");
 }
 
 function adminOK() {
@@ -528,7 +559,7 @@ async function addNewPlayer() {
   input.value = "";
   calculate();
   renderAll();
-  await syncReloadAndResume();
+  syncAllToGoogleSheets();
   alert("Jugador agregado correctamente.");
 }
 
@@ -606,23 +637,14 @@ function buildJugadoresRows() {
   return rows;
 }
 
-async function syncAllToGoogleSheets() {
-  try {
-    setCloudStatus("☁️ Sincronizando con Google Sheets...");
-
-    await sheetPost("Jugadores", buildJugadoresRows());
-    await sheetPost("Predicciones", buildPrediccionesRows());
-    await sheetPost("Resultados", buildResultadosRows());
-    await sheetPost("Especiales", buildEspecialesRows());
-    await sheetPost("TablaGeneral", buildTablaRows());
-
-    setCloudStatus("✅ Todo sincronizado con Google Sheets");
-    setTimeout(() => setCloudStatus("☁️ Auto actualización activa"), 2500);
-  } catch (error) {
-    console.error("Error sincronizando:", error);
-    setCloudStatus("⚠️ Error al sincronizar");
-    alert("No se pudo sincronizar con Google Sheets.");
-  }
+function syncAllToGoogleSheets() {
+  return Promise.all([
+    sheetPost("Jugadores", buildJugadoresRows()),
+    sheetPost("Predicciones", buildPrediccionesRows()),
+    sheetPost("Resultados", buildResultadosRows()),
+    sheetPost("Especiales", buildEspecialesRows()),
+    sheetPost("TablaGeneral", buildTablaRows())
+  ]);
 }
 
 function downloadExcel() {
@@ -975,12 +997,88 @@ function startAutoRefresh() {
   }, 30000);
 }
 
-async function syncReloadAndResume() {
-  autoRefreshEnabled = false;
-  await syncAllToGoogleSheets();
-  await loadFromGoogleSheets(true);
-  autoRefreshEnabled = true;
-  startAutoRefresh();
+
+function postAction(action, payload) {
+  const formData = new FormData();
+  formData.append("action", action);
+
+  Object.keys(payload || {}).forEach(key => {
+    const value = payload[key];
+    formData.append(key, typeof value === "string" ? value : JSON.stringify(value));
+  });
+
+  return fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: formData
+  });
+}
+
+async function savePlayersToCloud() {
+  await postAction("savePlayers", {
+    players: PLAYERS
+  });
+}
+
+async function savePredictionsDayToCloud(player, dayMatches) {
+  const predictions = dayMatches.map(m => {
+    const p = state.predictions[player.id]?.matches?.[m.id] || {};
+    return {
+      date: m.date,
+      stage: m.stage,
+      venue: m.venue || "",
+      homeTeam: m.home,
+      awayTeam: m.away,
+      homeScore: p.home === 0 || p.home === "0" ? "0" : (p.home ?? ""),
+      awayScore: p.away === 0 || p.away === "0" ? "0" : (p.away ?? ""),
+      scorers: p.scorers || ""
+    };
+  });
+
+  await postAction("savePredictionsDay", {
+    payload: {
+      player: {
+        id: player.id,
+        name: player.name
+      },
+      predictions
+    }
+  });
+}
+
+async function saveResultsDayToCloud(dayMatches) {
+  const results = dayMatches.map(m => {
+    const r = state.real.matches[m.id] || {};
+    return {
+      date: m.date,
+      stage: m.stage,
+      venue: m.venue || "",
+      homeTeam: m.home,
+      awayTeam: m.away,
+      homeScore: r.home === 0 || r.home === "0" ? "0" : (r.home ?? ""),
+      awayScore: r.away === 0 || r.away === "0" ? "0" : (r.away ?? ""),
+      scorers: r.scorers || ""
+    };
+  });
+
+  await postAction("saveResultsDay", {
+    payload: {
+      results
+    }
+  });
+}
+
+async function saveSpecialsToCloud() {
+  await postAction("saveSpecials", {
+    rows: buildEspecialesRows()
+  });
+}
+
+async function saveTablaToCloud() {
+  await postAction("replaceSheet", {
+    sheet: "TablaGeneral",
+    rows: buildTablaRows()
+  });
 }
 
 function renderAll() {
