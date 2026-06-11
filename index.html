@@ -165,10 +165,27 @@ function winner(h,a,home,away){
 function scorerList(v){return String(v||"").split(",").map(x=>normalize(x)).filter(Boolean);}
 
 function rowsToObjects(rows){
- if(!rows||rows.length<2)return[];
- const headers=rows[0].map(h=>String(h).trim());
- return rows.slice(1).filter(r=>r.some(c=>c!=="")).map(r=>{
-  const o={};headers.forEach((h,i)=>o[h]=r[i]??"");return o;
+ if(!rows || rows.length === 0) return [];
+
+ const headers = rows[0].map(h => String(h || "").trim());
+
+ return rows.slice(1).filter(r => r.some(c => c !== "")).map(r => {
+  const o = {};
+  headers.forEach((h,i) => o[h] = r[i] ?? "");
+
+  // Normalización para jugadores
+  if (!o.nombre) {
+    o.nombre =
+      o.Nombre ||
+      o.Jugador ||
+      o.jugador ||
+      o.Player ||
+      o.player ||
+      r[0] ||
+      "";
+  }
+
+  return o;
  });
 }
 function objectsToRows(headers,arr){return [headers,...arr.map(o=>headers.map(h=>o[h]??""))];}
@@ -188,7 +205,7 @@ function loadCloud(){
  const cb="cb_"+Date.now();
  window[cb]=res=>{
   if(res.ok){
-   players=rowsToObjects(res.data.Jugadores);
+   players = rowsToObjects(res.data.Jugadores || res.data.Jugadores2026 || res.data.Players || []);
    matches=rowsToObjects(res.data.Partidos);
    predictions=rowsToObjects(res.data.Predicciones);
    results=rowsToObjects(res.data.Resultados);
