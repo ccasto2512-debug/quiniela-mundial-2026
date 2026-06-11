@@ -104,29 +104,72 @@ function normalizeDayFromSheetValue(value) {
   return raw.slice(0, 10);
 }
 
-function findMatch(date, home, away) {
-  const sheetDay = normalizeDayFromSheetValue(date);
-  const h = norm(home);
-  const a = norm(away);
+function cleanTeamName(value) {
+  return norm(String(value || "")
+    .replace(/\s+/g, " ")
+    .replace("Republica", "República")
+    .trim());
+}
 
+function findMatch(date, home, away) {
+  const h = cleanTeamName(home);
+  const a = cleanTeamName(away);
+  const sheetDay = normalizeDayFromSheetValue(date);
+
+  // Primero intenta por equipos. En esta quiniela cada cruce es único.
   let match = MATCHES.find(m =>
-    dayOf(m.date) === sheetDay &&
-    norm(m.home) === h &&
-    norm(m.away) === a
+    cleanTeamName(m.home) === h &&
+    cleanTeamName(m.away) === a
   );
 
   if (match) return match;
 
+  // Luego intenta con día + equipos por si existieran cruces repetidos.
   match = MATCHES.find(m =>
-    norm(m.home) === h &&
-    norm(m.away) === a
+    dayOf(m.date) === sheetDay &&
+    (
+      cleanTeamName(m.home).includes(h) ||
+      h.includes(cleanTeamName(m.home))
+    ) &&
+    (
+      cleanTeamName(m.away).includes(a) ||
+      a.includes(cleanTeamName(m.away))
+    )
   );
 
   return match || null;
 }
 function findPlayerByName(name){let p=PLAYERS.find(x=>norm(x.name)===norm(name));if(p)return p;p={id:"p"+Date.now()+Math.floor(Math.random()*9999),name:String(name).trim()};PLAYERS.push(p);return p}
 
-async function loadFromGoogleSheets(silent=true){if(saving)return;try{if(!silent)setCloudStatus("☁️ Cargando desde Google Sheets...");const res=await jsonp(API_URL);if(!res||!res.ok||!res.data)throw new Error("Respuesta inválida");state={predictions:{},real:{matches:{},specials:{champion:"",runner:"",third:"",surprise:"",topScorer:""}},scores:[]};loadPlayers(res.data.Jugadores);PLAYERS.forEach(p=>ensurePlayer(p.id));loadPreds(res.data.Predicciones);loadResults(res.data.Resultados);loadSpecials(res.data.Especiales);PLAYERS.forEach(p=>ensurePlayer(p.id));calculate();renderAll();setCloudStatus("✅ Datos cargados");kpiSync.textContent=new Date().toLocaleTimeString("es-CR");setTimeout(()=>setCloudStatus("☁️ Auto actualización cada 30s"),1500)}catch(e){console.error(e);setCloudStatus("⚠️ No se pudo cargar")}}
+
+function diagnosticUnmatchedPredictionsFromData(data) {
+  if (!data || !data.Predicciones || data.Predicciones.length < 2) return [];
+
+  const rows = data.Predicciones;
+  const headers = rows[0].map(String);
+
+  const dI = headerIndex(headers, ["FechaPartido"]);
+  const homeI = headerIndex(headers, ["Equipo1"]);
+  const awayI = headerIndex(headers, ["Equipo2"]);
+  const pI = headerIndex(headers, ["Jugador"]);
+
+  const missing = [];
+
+  rows.slice(1).forEach(r => {
+    const m = findMatch(r[dI], r[homeI], r[awayI]);
+    if (!m) {
+      missing.push(`${r[pI]} | ${r[dI]} | ${r[homeI]} vs ${r[awayI]}`);
+    }
+  });
+
+  if (missing.length) {
+    console.warn("Predicciones sin match:", missing);
+  }
+
+  return missing;
+}
+
+async function loadFromGoogleSheets(silent=true){if(saving)return;try{if(!silent)setCloudStatus("☁️ Cargando desde Google Sheets...");const res=await jsonp(API_URL);if(!res||!res.ok||!res.data)throw new Error("Respuesta inválida"); diagnosticUnmatchedPredictionsFromData(res.data);state={predictions:{},real:{matches:{},specials:{champion:"",runner:"",third:"",surprise:"",topScorer:""}},scores:[]};loadPlayers(res.data.Jugadores);PLAYERS.forEach(p=>ensurePlayer(p.id));loadPreds(res.data.Predicciones);loadResults(res.data.Resultados);loadSpecials(res.data.Especiales);PLAYERS.forEach(p=>ensurePlayer(p.id));calculate();renderAll();setCloudStatus("✅ Datos cargados");kpiSync.textContent=new Date().toLocaleTimeString("es-CR");setTimeout(()=>setCloudStatus("☁️ Auto actualización cada 30s"),1500)}catch(e){console.error(e);setCloudStatus("⚠️ No se pudo cargar")}}
 function loadPlayers(rows){if(!rows||rows.length<2)return;const h=rows[0].map(String),idI=headerIndex(h,["ID","Id"]),nameI=headerIndex(h,["Jugador","Nombre"]);if(nameI<0)return;const arr=[];rows.slice(1).forEach(r=>{if(r[nameI])arr.push({id:String(r[idI]||"p"+Date.now()+Math.random()),name:String(r[nameI]).trim()})});if(arr.length)PLAYERS=arr}
 function loadPreds(rows){if(!rows||rows.length<2)return;const h=rows[0].map(String),pI=headerIndex(h,["Jugador"]),dI=headerIndex(h,["FechaPartido"]),homeI=headerIndex(h,["Equipo1"]),awayI=headerIndex(h,["Equipo2"]),phI=headerIndex(h,["PrediccionEquipo1"]),paI=headerIndex(h,["PrediccionEquipo2"]),sI=headerIndex(h,["GoleadoresPronosticados"]);rows.slice(1).forEach(r=>{const p=findPlayerByName(r[pI]),m=findMatch(r[dI],r[homeI],r[awayI]);if(!p||!m){console.warn("Predicción no cargada por falta de match:", r);return;}ensurePlayer(p.id);state.predictions[p.id].matches[m.id]={home:r[phI]??"",away:r[paI]??"",scorers:r[sI]??""}})}
 function loadResults(rows){if(!rows||rows.length<2)return;const h=rows[0].map(String),dI=headerIndex(h,["FechaPartido"]),homeI=headerIndex(h,["Equipo1"]),awayI=headerIndex(h,["Equipo2"]),rhI=headerIndex(h,["ResultadoEquipo1"]),raI=headerIndex(h,["ResultadoEquipo2"]),sI=headerIndex(h,["GoleadoresReales"]);rows.slice(1).forEach(r=>{const m=findMatch(r[dI],r[homeI],r[awayI]);if(!m){console.warn("Resultado no cargado por falta de match:", r);return;}state.real.matches[m.id]={home:r[rhI]??"",away:r[raI]??"",scorers:r[sI]??""}})}
