@@ -16,7 +16,8 @@ button{border:0;border-radius:999px;padding:12px 18px;font-weight:900;cursor:poi
 button.active,.primary{background:var(--blue)}
 .success{background:var(--green)}
 .danger{background:var(--red)}
-.sheet{display:none}.sheet.active{display:block}
+.sheet{display:none}
+.sheet.active{display:block}
 .panel{background:linear-gradient(180deg,#0e1a2ff4,#091427f4);border:1px solid var(--line);border-radius:24px;padding:20px;margin-bottom:18px;box-shadow:0 20px 50px #0006}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
 .half{grid-column:span 6}.third{grid-column:span 4}.full{grid-column:span 12}
@@ -32,7 +33,8 @@ th{color:#bfdbfe;background:#2563eb20}
 .kpi{background:var(--dark);border:1px solid var(--line);border-radius:18px;padding:16px}
 .match-card,.detail-card{background:#06101f;border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}
 .badge{display:inline-block;border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:900;background:#2563eb33;color:#bfdbfe;border:1px solid #2563eb66}
-.muted{color:var(--muted)}.small{font-size:.86rem}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .cloud-status{position:fixed;right:16px;bottom:16px;background:#06101f;border:1px solid #2a3b58;border-radius:999px;padding:10px 14px;color:#bfdbfe;font-size:.85rem;z-index:99}
 .whatsapp-box{background:#06101f;border:1px solid #2a3b58;border-radius:18px;padding:14px;white-space:pre-wrap;color:#dbeafe;font-family:monospace;font-size:.92rem;line-height:1.45;margin-top:12px}
@@ -149,7 +151,8 @@ function dateKey(v){
  }
  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
  if(m){
-  let y=m[3]; if(y.length===2)y="20"+y;
+  let y=m[3]; 
+  if(y.length===2)y="20"+y;
   return `${Number(m[1])}/${Number(m[2])}/${y}`;
  }
  return s;
@@ -162,7 +165,19 @@ function dateSortValue(v){
 }
 
 function flag(team){
- const f={"méxico":"🇲🇽","sudáfrica":"🇿🇦","república de corea":"🇰🇷","república checa":"🇨🇿","canadá":"🇨🇦","bosnia y herzegovina":"🇧🇦","estados unidos":"🇺🇸","paraguay":"🇵🇾","catar":"🇶🇦","suiza":"🇨🇭","brasil":"🇧🇷","marruecos":"🇲🇦","haití":"🇭🇹","escocia":"🏴","australia":"🇦🇺","turquía":"🇹🇷","alemania":"🇩🇪","curazao":"🇨🇼","países bajos":"🇳🇱","japón":"🇯🇵","costa de marfil":"🇨🇮","ecuador":"🇪🇨","suecia":"🇸🇪","túnez":"🇹🇳","españa":"🇪🇸","cabo verde":"🇨🇻","bélgica":"🇧🇪","egipto":"🇪🇬","arabia saudí":"🇸🇦","uruguay":"🇺🇾","ri de irán":"🇮🇷","irán":"🇮🇷","nueva zelanda":"🇳🇿","francia":"🇫🇷","senegal":"🇸🇳","irak":"🇮🇶","noruega":"🇳🇴","argentina":"🇦🇷","argelia":"🇩🇿","austria":"🇦🇹","jordania":"🇯🇴","portugal":"🇵🇹","rd congo":"🇨🇩","inglaterra":"🏴","croacia":"🇭🇷","ghana":"🇬🇭","panamá":"🇵🇦","uzbekistán":"🇺🇿","colombia":"🇨🇴"};
+ const f={
+ "méxico":"🇲🇽","sudáfrica":"🇿🇦","república de corea":"🇰🇷","república checa":"🇨🇿",
+ "canadá":"🇨🇦","bosnia y herzegovina":"🇧🇦","estados unidos":"🇺🇸","paraguay":"🇵🇾",
+ "catar":"🇶🇦","suiza":"🇨🇭","brasil":"🇧🇷","marruecos":"🇲🇦","haití":"🇭🇹",
+ "escocia":"🏴","australia":"🇦🇺","turquía":"🇹🇷","alemania":"🇩🇪","curazao":"🇨🇼",
+ "países bajos":"🇳🇱","japón":"🇯🇵","costa de marfil":"🇨🇮","ecuador":"🇪🇨",
+ "suecia":"🇸🇪","túnez":"🇹🇳","españa":"🇪🇸","cabo verde":"🇨🇻","bélgica":"🇧🇪",
+ "egipto":"🇪🇬","arabia saudí":"🇸🇦","uruguay":"🇺🇾","ri de irán":"🇮🇷","irán":"🇮🇷",
+ "nueva zelanda":"🇳🇿","francia":"🇫🇷","senegal":"🇸🇳","irak":"🇮🇶","noruega":"🇳🇴",
+ "argentina":"🇦🇷","argelia":"🇩🇿","austria":"🇦🇹","jordania":"🇯🇴","portugal":"🇵🇹",
+ "rd congo":"🇨🇩","inglaterra":"🏴","croacia":"🇭🇷","ghana":"🇬🇭","panamá":"🇵🇦",
+ "uzbekistán":"🇺🇿","colombia":"🇨🇴"
+ };
  return f[normalize(team)]||"⚽";
 }
 
@@ -177,11 +192,15 @@ function rowsToObjects(rows){
  if(!rows||!rows.length)return[];
  const headers=rows[0].map(h=>String(h??"").trim());
  return rows.slice(1).filter(r=>r.some(c=>c!==""&&c!==null&&c!==undefined)).map(r=>{
-  const o={};headers.forEach((h,i)=>o[h]=r[i]);return o;
+  const o={};
+  headers.forEach((h,i)=>o[h]=r[i]);
+  return o;
  });
 }
 
-function objectsToRows(headers,arr){return [headers,...arr.map(o=>headers.map(h=>o[h]??""))];}
+function objectsToRows(headers,arr){
+ return [headers,...arr.map(o=>headers.map(h=>o[h]??""))];
+}
 
 function normalizeMatches(raw){
  return raw.map((r,i)=>({
@@ -239,15 +258,23 @@ function normalizeSpecials(raw){
 
 function normalizePlayers(raw){
  const map=new Map();
- raw.forEach(r=>{const n=r.Nombre??r.Jugador??r.nombre??"";if(n)map.set(normalize(n),{nombre:String(n).trim()});});
- predictions.forEach(p=>{if(p.jugador)map.set(normalize(p.jugador),{nombre:p.jugador});});
- specials.forEach(s=>{if(s.jugador)map.set(normalize(s.jugador),{nombre:s.jugador});});
+ raw.forEach(r=>{
+  const n=r.Nombre??r.Jugador??r.nombre??"";
+  if(n)map.set(normalize(n),{nombre:String(n).trim()});
+ });
+ predictions.forEach(p=>{
+  if(p.jugador)map.set(normalize(p.jugador),{nombre:p.jugador});
+ });
+ specials.forEach(s=>{
+  if(s.jugador)map.set(normalize(s.jugador),{nombre:s.jugador});
+ });
  return[...map.values()].filter(p=>p.nombre);
 }
 
 function loadCloud(){
  cloudStatus.textContent="Conectando Google Sheets...";
  const cb="cb_"+Date.now();
+
  window[cb]=res=>{
   try{
    const d=res.data||{};
@@ -256,17 +283,28 @@ function loadCloud(){
    const rawPred=rowsToObjects(d.Predicciones||[]);
    const rawResults=rowsToObjects(d.Resultados||[]);
    const rawSpecials=rowsToObjects(d.Especiales||[]);
+
    matches=normalizeMatches(rawMatches);
    predictions=normalizePredictions(rawPred);
    results=normalizeResults(rawResults);
+
    const sp=normalizeSpecials(rawSpecials);
-   specials=sp.pred;realSpecials=sp.real;
+   specials=sp.pred;
+   realSpecials=sp.real;
+
    players=normalizePlayers(rawPlayers);
+
    renderAll();
    cloudStatus.textContent="Datos cargados";
-  }catch(e){console.error(e);cloudStatus.textContent="Error cargando datos";}
-  delete window[cb];script.remove();
+  }catch(e){
+   console.error(e);
+   cloudStatus.textContent="Error cargando datos";
+  }
+
+  delete window[cb];
+  script.remove();
  };
+
  const script=document.createElement("script");
  script.src=API_URL+"?callback="+cb+"&t="+Date.now();
  document.body.appendChild(script);
@@ -292,132 +330,367 @@ function fillDays(){
 }
 
 function renderAll(){
- fillSelect(entryPlayer,players);fillSelect(detailPlayer,players);fillSelect(specialPlayer,players);fillDays();
- renderEntries();renderRealEntries();renderSpecials();renderStandings();renderDetails();renderAdmin();renderShareMessage();
- kpiPlayers.textContent=players.length;kpiMatches.textContent=matches.length;kpiSync.textContent=new Date().toLocaleTimeString();
+ fillSelect(entryPlayer,players);
+ fillSelect(detailPlayer,players);
+ fillSelect(specialPlayer,players);
+ fillDays();
+
+ renderEntries();
+ renderRealEntries();
+ renderSpecials();
+ renderStandings();
+ renderDetails();
+ renderAdmin();
+ renderShareMessage();
+
+ kpiPlayers.textContent=players.length;
+ kpiMatches.textContent=matches.length;
+ kpiSync.textContent=new Date().toLocaleTimeString();
 }
 
-function getPrediction(player,m){return predictions.find(p=>normalize(p.jugador)===normalize(player)&&p.matchId===m.id)||{};}
-function getResult(m){return results.find(r=>r.matchId===m.id)||{};}
+function getPrediction(player,m){
+ return predictions.find(p=>normalize(p.jugador)===normalize(player)&&p.matchId===m.id)||{};
+}
+
+function getResult(m){
+ return results.find(r=>r.matchId===m.id)||{};
+}
 
 function renderEntries(){
- const player=entryPlayer.value,day=entryDay.value,list=matches.filter(m=>m.fecha===day);
+ const player=entryPlayer.value;
+ const day=entryDay.value;
+ const list=matches.filter(m=>m.fecha===day);
+
  entryMatches.innerHTML=list.map(m=>{
   const p=getPrediction(player,m);
-  return `<div class="match-card"><span class="badge">${m.fase||"Partido"} ${m.id}</span><h3>${flag(m.local)} ${m.local} vs ${flag(m.visitante)} ${m.visitante}</h3><div class="muted">${m.fecha} ${m.hora||""} · ${m.estadio||""}</div><div class="grid"><div class="half"><label>${m.local}</label><input type="number" id="ph_${m.id}" value="${inputVal(p.localGoles)}"></div><div class="half"><label>${m.visitante}</label><input type="number" id="pa_${m.id}" value="${inputVal(p.visitanteGoles)}"></div><div class="full"><label>Goleadores separados por coma</label><textarea id="ps_${m.id}">${p.goleadores??""}</textarea></div></div></div>`;
+  return `<div class="match-card">
+   <span class="badge">${m.fase||"Partido"} ${m.id}</span>
+   <h3>${flag(m.local)} ${m.local} vs ${flag(m.visitante)} ${m.visitante}</h3>
+   <div class="muted">${m.fecha} ${m.hora||""} · ${m.estadio||""}</div>
+   <div class="grid">
+    <div class="half"><label>${m.local}</label><input type="number" id="ph_${m.id}" value="${inputVal(p.localGoles)}"></div>
+    <div class="half"><label>${m.visitante}</label><input type="number" id="pa_${m.id}" value="${inputVal(p.visitanteGoles)}"></div>
+    <div class="full"><label>Goleadores separados por coma</label><textarea id="ps_${m.id}">${p.goleadores??""}</textarea></div>
+   </div>
+  </div>`;
  }).join("")||"<p>No hay partidos para esta fecha.</p>";
 }
 
 function saveEntries(){
- const player=entryPlayer.value,day=entryDay.value,dayMatches=matches.filter(m=>m.fecha===day),ids=dayMatches.map(m=>m.id);
+ const player=entryPlayer.value;
+ const day=entryDay.value;
+ const dayMatches=matches.filter(m=>m.fecha===day);
+ const ids=dayMatches.map(m=>m.id);
+
  predictions=predictions.filter(p=>!(normalize(p.jugador)===normalize(player)&&ids.includes(p.matchId)));
+
  dayMatches.forEach(m=>{
-  predictions.push({jugador:player,matchId:m.id,fecha:m.fecha,fase:m.fase,estadio:m.estadio,local:m.local,visitante:m.visitante,localGoles:document.getElementById("ph_"+m.id).value,visitanteGoles:document.getElementById("pa_"+m.id).value,goleadores:document.getElementById("ps_"+m.id).value});
+  predictions.push({
+   jugador:player,
+   matchId:m.id,
+   fecha:m.fecha,
+   fase:m.fase,
+   estadio:m.estadio,
+   local:m.local,
+   visitante:m.visitante,
+   localGoles:document.getElementById("ph_"+m.id).value,
+   visitanteGoles:document.getElementById("pa_"+m.id).value,
+   goleadores:document.getElementById("ps_"+m.id).value
+  });
  });
- const rows=objectsToRows(["FechaRegistro","Jugador","FechaPartido","Fase","Estadio","Equipo1","Equipo2","PrediccionEquipo1","PrediccionEquipo2","GoleadoresPronosticados"],predictions.map(p=>({FechaRegistro:new Date().toLocaleString(),Jugador:p.jugador,FechaPartido:p.fecha,Fase:p.fase,Estadio:p.estadio,Equipo1:p.local,Equipo2:p.visitante,PrediccionEquipo1:p.localGoles,PrediccionEquipo2:p.visitanteGoles,GoleadoresPronosticados:p.goleadores})));
- saveSheet("Predicciones",rows);renderStandings();renderDetails();alert("Predicciones guardadas");
+
+ const rows=objectsToRows(
+  ["FechaRegistro","Jugador","FechaPartido","Fase","Estadio","Equipo1","Equipo2","PrediccionEquipo1","PrediccionEquipo2","GoleadoresPronosticados"],
+  predictions.map(p=>({
+   FechaRegistro:new Date().toLocaleString(),
+   Jugador:p.jugador,
+   FechaPartido:p.fecha,
+   Fase:p.fase,
+   Estadio:p.estadio,
+   Equipo1:p.local,
+   Equipo2:p.visitante,
+   PrediccionEquipo1:p.localGoles,
+   PrediccionEquipo2:p.visitanteGoles,
+   GoleadoresPronosticados:p.goleadores
+  }))
+ );
+
+ saveSheet("Predicciones",rows);
+ renderStandings();
+ renderDetails();
+ alert("Predicciones guardadas");
 }
 
 function renderRealEntries(){
- const day=realDay.value,list=matches.filter(m=>m.fecha===day);
+ const day=realDay.value;
+ const list=matches.filter(m=>m.fecha===day);
+
  realMatches.innerHTML=list.map(m=>{
   const r=getResult(m);
-  return `<div class="match-card"><h3>${flag(m.local)} ${m.local} vs ${flag(m.visitante)} ${m.visitante}</h3><div class="grid"><div class="half"><label>${m.local}</label><input type="number" id="rh_${m.id}" value="${inputVal(r.localGoles)}"></div><div class="half"><label>${m.visitante}</label><input type="number" id="ra_${m.id}" value="${inputVal(r.visitanteGoles)}"></div><div class="full"><label>Goleadores reales</label><textarea id="rs_${m.id}">${r.goleadores??""}</textarea></div></div></div>`;
+  return `<div class="match-card">
+   <h3>${flag(m.local)} ${m.local} vs ${flag(m.visitante)} ${m.visitante}</h3>
+   <div class="grid">
+    <div class="half"><label>${m.local}</label><input type="number" id="rh_${m.id}" value="${inputVal(r.localGoles)}"></div>
+    <div class="half"><label>${m.visitante}</label><input type="number" id="ra_${m.id}" value="${inputVal(r.visitanteGoles)}"></div>
+    <div class="full"><label>Goleadores reales</label><textarea id="rs_${m.id}">${r.goleadores??""}</textarea></div>
+   </div>
+  </div>`;
  }).join("")||"<p>No hay partidos para esta fecha.</p>";
 }
 
 function saveRealEntries(){
- const day=realDay.value,dayMatches=matches.filter(m=>m.fecha===day),ids=dayMatches.map(m=>m.id);
+ const day=realDay.value;
+ const dayMatches=matches.filter(m=>m.fecha===day);
+ const ids=dayMatches.map(m=>m.id);
+
  results=results.filter(r=>!ids.includes(r.matchId));
+
  dayMatches.forEach(m=>{
-  results.push({matchId:m.id,fecha:m.fecha,local:m.local,visitante:m.visitante,localGoles:document.getElementById("rh_"+m.id).value,visitanteGoles:document.getElementById("ra_"+m.id).value,goleadores:document.getElementById("rs_"+m.id).value});
+  results.push({
+   matchId:m.id,
+   fecha:m.fecha,
+   local:m.local,
+   visitante:m.visitante,
+   localGoles:document.getElementById("rh_"+m.id).value,
+   visitanteGoles:document.getElementById("ra_"+m.id).value,
+   goleadores:document.getElementById("rs_"+m.id).value
+  });
  });
- const rows=objectsToRows(["FechaPartido","Equipo1","Equipo2","ResultadoEquipo1","ResultadoEquipo2","GoleadoresReales"],results.map(r=>({FechaPartido:r.fecha,Equipo1:r.local,Equipo2:r.visitante,ResultadoEquipo1:r.localGoles,ResultadoEquipo2:r.visitanteGoles,GoleadoresReales:r.goleadores})));
- saveSheet("Resultados",rows);renderStandings();alert("Resultados guardados");
+
+ const rows=objectsToRows(
+  ["FechaPartido","Equipo1","Equipo2","ResultadoEquipo1","ResultadoEquipo2","GoleadoresReales"],
+  results.map(r=>({
+   FechaPartido:r.fecha,
+   Equipo1:r.local,
+   Equipo2:r.visitante,
+   ResultadoEquipo1:r.localGoles,
+   ResultadoEquipo2:r.visitanteGoles,
+   GoleadoresReales:r.goleadores
+  }))
+ );
+
+ saveSheet("Resultados",rows);
+ renderStandings();
+ alert("Resultados guardados");
 }
 
 function renderDetails(){
- const player=detailPlayer.value,list=predictions.filter(p=>normalize(p.jugador)===normalize(player));
+ const player=detailPlayer.value;
+ const list=predictions.filter(p=>normalize(p.jugador)===normalize(player));
+
  playerDetails.innerHTML=list.map(p=>{
   const r=results.find(x=>x.matchId===p.matchId)||{};
-  return `<div class="detail-card"><h3>${flag(p.local)} ${p.local} vs ${flag(p.visitante)} ${p.visitante}</h3><strong>Predicción: ${showVal(p.localGoles)} - ${showVal(p.visitanteGoles)}</strong><br><span class="muted">Goleadores: ${p.goleadores??"-"}</span><br><span class="muted">Real: ${showVal(r.localGoles)} - ${showVal(r.visitanteGoles)}</span></div>`;
+  return `<div class="detail-card">
+   <h3>${flag(p.local)} ${p.local} vs ${flag(p.visitante)} ${p.visitante}</h3>
+   <strong>Predicción: ${showVal(p.localGoles)} - ${showVal(p.visitanteGoles)}</strong><br>
+   <span class="muted">Goleadores: ${p.goleadores??"-"}</span><br>
+   <span class="muted">Real: ${showVal(r.localGoles)} - ${showVal(r.visitanteGoles)}</span>
+  </div>`;
  }).join("")||"<p>Este jugador aún no tiene predicciones.</p>";
 }
 
 function renderSpecials(){
- const player=specialPlayer.value,s=specials.find(x=>normalize(x.jugador)===normalize(player))||{};
- spChampion.value=s.campeon??"";spRunner.value=s.subcampeon??"";spThird.value=s.tercero??"";spSurprise.value=s.revelacion??"";spTopScorer.value=s.goleador??"";
- realChampion.value=realSpecials.campeon??"";realRunner.value=realSpecials.subcampeon??"";realThird.value=realSpecials.tercero??"";realSurprise.value=realSpecials.revelacion??"";realTopScorer.value=realSpecials.goleador??"";
+ const player=specialPlayer.value;
+ const s=specials.find(x=>normalize(x.jugador)===normalize(player))||{};
+
+ spChampion.value=s.campeon??"";
+ spRunner.value=s.subcampeon??"";
+ spThird.value=s.tercero??"";
+ spSurprise.value=s.revelacion??"";
+ spTopScorer.value=s.goleador??"";
+
+ realChampion.value=realSpecials.campeon??"";
+ realRunner.value=realSpecials.subcampeon??"";
+ realThird.value=realSpecials.tercero??"";
+ realSurprise.value=realSpecials.revelacion??"";
+ realTopScorer.value=realSpecials.goleador??"";
 }
 
 function saveSpecials(){
  const player=specialPlayer.value;
+
  specials=specials.filter(s=>normalize(s.jugador)!==normalize(player));
- specials.push({jugador:player,campeon:spChampion.value,subcampeon:spRunner.value,tercero:spThird.value,revelacion:spSurprise.value,goleador:spTopScorer.value});
- saveAllSpecials();renderStandings();alert("Especiales guardados");
+ specials.push({
+  jugador:player,
+  campeon:spChampion.value,
+  subcampeon:spRunner.value,
+  tercero:spThird.value,
+  revelacion:spSurprise.value,
+  goleador:spTopScorer.value
+ });
+
+ saveAllSpecials();
+ renderStandings();
+ alert("Especiales guardados");
 }
 
 function saveRealSpecials(){
- realSpecials={jugador:"Administrador",campeon:realChampion.value,subcampeon:realRunner.value,tercero:realThird.value,revelacion:realSurprise.value,goleador:realTopScorer.value};
- saveAllSpecials();renderStandings();alert("Resultados especiales guardados");
+ realSpecials={
+  jugador:"Administrador",
+  campeon:realChampion.value,
+  subcampeon:realRunner.value,
+  tercero:realThird.value,
+  revelacion:realSurprise.value,
+  goleador:realTopScorer.value
+ };
+
+ saveAllSpecials();
+ renderStandings();
+ alert("Resultados especiales guardados");
 }
 
 function saveAllSpecials(){
- const all=[...specials.map(s=>({FechaRegistro:new Date().toLocaleString(),Tipo:"PrediccionJugador",Jugador:s.jugador,Campeon:s.campeon,Subcampeon:s.subcampeon,TercerLugar:s.tercero,Revelacion:s.revelacion,GoleadorTorneo:s.goleador})),{FechaRegistro:new Date().toLocaleString(),Tipo:"ResultadoReal",Jugador:"Administrador",Campeon:realSpecials.campeon,Subcampeon:realSpecials.subcampeon,TercerLugar:realSpecials.tercero,Revelacion:realSpecials.revelacion,GoleadorTorneo:realSpecials.goleador}];
- saveSheet("Especiales",objectsToRows(["FechaRegistro","Tipo","Jugador","Campeon","Subcampeon","TercerLugar","Revelacion","GoleadorTorneo"],all));
+ const all=[
+  ...specials.map(s=>({
+   FechaRegistro:new Date().toLocaleString(),
+   Tipo:"PrediccionJugador",
+   Jugador:s.jugador,
+   Campeon:s.campeon,
+   Subcampeon:s.subcampeon,
+   TercerLugar:s.tercero,
+   Revelacion:s.revelacion,
+   GoleadorTorneo:s.goleador
+  })),
+  {
+   FechaRegistro:new Date().toLocaleString(),
+   Tipo:"ResultadoReal",
+   Jugador:"Administrador",
+   Campeon:realSpecials.campeon,
+   Subcampeon:realSpecials.subcampeon,
+   TercerLugar:realSpecials.tercero,
+   Revelacion:realSpecials.revelacion,
+   GoleadorTorneo:realSpecials.goleador
+  }
+ ];
+
+ saveSheet("Especiales",objectsToRows(
+  ["FechaRegistro","Tipo","Jugador","Campeon","Subcampeon","TercerLugar","Revelacion","GoleadorTorneo"],
+  all
+ ));
 }
 
 function scorePlayer(name){
  let exact=0,win=0,scorers=0,specialPts=0;
+
  matches.forEach(m=>{
-  const p=getPrediction(name,m),r=getResult(m);
+  const p=getPrediction(name,m);
+  const r=getResult(m);
+
   const hasReal=r.localGoles!==undefined&&r.visitanteGoles!==undefined&&r.localGoles!==""&&r.visitanteGoles!=="";
   const hasPred=p.localGoles!==undefined&&p.visitanteGoles!==undefined&&p.localGoles!==""&&p.visitanteGoles!=="";
+
   if(!hasReal||!hasPred)return;
-  const pl=Number(p.localGoles),pv=Number(p.visitanteGoles),rl=Number(r.localGoles),rv=Number(r.visitanteGoles);
-  if(pl===rl&&pv===rv){exact+=3;}else{
-   const pw=pl>pv?"L":pl<pv?"V":"E",rw=rl>rv?"L":rl<rv?"V":"E";
+
+  const pl=Number(p.localGoles);
+  const pv=Number(p.visitanteGoles);
+  const rl=Number(r.localGoles);
+  const rv=Number(r.visitanteGoles);
+
+  if(pl===rl&&pv===rv){
+   exact+=3;
+  }else{
+   const pw=pl>pv?"L":pl<pv?"V":"E";
+   const rw=rl>rv?"L":rl<rv?"V":"E";
    if(pw===rw)win+=2;
   }
+
   const real=scorerList(r.goleadores);
-  if(real.length)scorerList(p.goleadores).forEach(g=>{if(real.includes(g))scorers+=1;});
+  if(real.length){
+   scorerList(p.goleadores).forEach(g=>{
+    if(real.includes(g))scorers+=1;
+   });
+  }
  });
+
  const s=specials.find(x=>normalize(x.jugador)===normalize(name))||{};
+
  if(realSpecials.campeon&&normalize(s.campeon)===normalize(realSpecials.campeon))specialPts+=20;
  if(realSpecials.subcampeon&&normalize(s.subcampeon)===normalize(realSpecials.subcampeon))specialPts+=15;
  if(realSpecials.goleador&&normalize(s.goleador)===normalize(realSpecials.goleador))specialPts+=15;
  if(realSpecials.tercero&&normalize(s.tercero)===normalize(realSpecials.tercero))specialPts+=10;
  if(realSpecials.revelacion&&normalize(s.revelacion)===normalize(realSpecials.revelacion))specialPts+=10;
+
  return{jugador:name,exact,win,scorers,specialPts,total:exact+win+scorers+specialPts};
 }
 
 function renderStandings(){
  const rows=players.map(p=>scorePlayer(p.nombre)).sort((a,b)=>b.total-a.total);
- standings.innerHTML=`<table><tr><th>#</th><th>Jugador</th><th>Exactos</th><th>Ganador</th><th>Goleadores</th><th>Especiales</th><th>Total</th></tr>${rows.map((r,i)=>`<tr class="${i===0?'leader':''}"><td>${i+1}</td><td>${i===0?'🏆 ':''}${r.jugador}</td><td>${r.exact}</td><td>${r.win}</td><td>${r.scorers}</td><td>${r.specialPts}</td><td><b>${r.total}</b></td></tr>`).join("")}</table>`;
+
+ standings.innerHTML=`<table>
+ <tr>
+  <th>#</th>
+  <th>Jugador</th>
+  <th>Exactos</th>
+  <th>Ganador</th>
+  <th>Goleadores</th>
+  <th>Especiales</th>
+  <th>Total</th>
+ </tr>
+ ${rows.map((r,i)=>`<tr class="${i===0?'leader':''}">
+  <td>${i+1}</td>
+  <td>${i===0?'🏆 ':''}${r.jugador}</td>
+  <td>${r.exact}</td>
+  <td>${r.win}</td>
+  <td>${r.scorers}</td>
+  <td>${r.specialPts}</td>
+  <td><b>${r.total}</b></td>
+ </tr>`).join("")}
+ </table>`;
+
  kpiLeader.textContent=rows[0]?`${rows[0].jugador} · ${rows[0].total} pts`:"Sin datos";
 }
 
 function renderShareMessage(){
- const day=entryDay.value,list=matches.filter(m=>m.fecha===day);
- sharePreview.textContent=`🏆 Quiniela Mundial 2026\n📅 Fecha: ${day}\n\n`+list.map((m,i)=>`${i+1}. ${flag(m.local)} ${m.local} vs ${flag(m.visitante)} ${m.visitante}\nMarcador: __ - __\nGoleadores: ______`).join("\n\n");
+ const day=entryDay.value;
+ const list=matches.filter(m=>m.fecha===day);
+
+ sharePreview.textContent=`🏆 Quiniela Mundial 2026\n📅 Fecha: ${day}\n\n`+
+ list.map((m,i)=>`${i+1}. ${flag(m.local)} ${m.local} vs ${flag(m.visitante)} ${m.visitante}\nMarcador: __ - __\nGoleadores: ______`).join("\n\n");
 }
 
-function copyShareMessage(){navigator.clipboard.writeText(sharePreview.textContent);alert("Mensaje copiado");}
+function copyShareMessage(){
+ navigator.clipboard.writeText(sharePreview.textContent);
+ alert("Mensaje copiado");
+}
 
 function addPlayer(){
- const name=newPlayer.value.trim();if(!name)return;
- players.push({nombre:name});newPlayer.value="";
- saveSheet("Jugadores",objectsToRows(["Nombre"],players.map(p=>({Nombre:p.nombre}))));renderAll();
+ const name=newPlayer.value.trim();
+ if(!name)return;
+
+ players.push({nombre:name});
+ newPlayer.value="";
+
+ saveSheet("Jugadores",objectsToRows(["Nombre"],players.map(p=>({Nombre:p.nombre}))));
+ renderAll();
 }
 
 function renderAdmin(){
- adminData.innerHTML=`<div class="actions"><button class="success" onclick="loadCloud()">Cargar información</button><button class="primary" onclick="downloadCSV()">Descargar información CSV/Excel</button></div><h3>Jugadores</h3>${players.map(p=>`<p>${p.nombre}</p>`).join("")}`;
+ adminData.innerHTML=`<div class="actions">
+ <button class="success" onclick="loadCloud()">Cargar información</button>
+ <button class="primary" onclick="downloadCSV()">Descargar información CSV/Excel</button>
+ </div>
+ <h3>Jugadores</h3>
+ ${players.map(p=>`<p>${p.nombre}</p>`).join("")}`;
 }
 
 function downloadCSV(){
- const rows=[["Jugador","Partido","PredLocal","PredVisitante","Goleadores"],...predictions.map(p=>[p.jugador,`${p.local} vs ${p.visitante}`,p.localGoles,p.visitanteGoles,p.goleadores])];
+ const rows=[
+  ["Jugador","Partido","PredLocal","PredVisitante","Goleadores"],
+  ...predictions.map(p=>[
+   p.jugador,
+   `${p.local} vs ${p.visitante}`,
+   p.localGoles,
+   p.visitanteGoles,
+   p.goleadores
+  ])
+ ];
+
  const csv=rows.map(r=>r.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="quiniela-mundial-2026.csv";a.click();
+
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ a.download="quiniela-mundial-2026.csv";
+ a.click();
 }
 
 setInterval(loadCloud,30000);
