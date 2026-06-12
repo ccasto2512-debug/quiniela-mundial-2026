@@ -15,10 +15,8 @@ h1{font-size:clamp(2rem,5vw,3.5rem);margin:0}
 button{border:0;border-radius:999px;padding:12px 18px;font-weight:900;cursor:pointer;background:var(--panel2);color:white}
 button.active,.primary{background:var(--blue)}
 .success{background:var(--green)}
-.danger{background:var(--red)}
-.sheet{display:none}
-.sheet.active{display:block}
-.panel{background:linear-gradient(180deg,#0e1a2ff4,#091427f4);border:1px solid var(--line);border-radius:24px;padding:20px;margin-bottom:18px;box-shadow:0 20px 50px #0006}
+.sheet{display:none}.sheet.active{display:block}
+.panel{background:linear-gradient(180deg,#0e1a2ff4,#091427f4);border:1px solid var(--line);border-radius:24px;padding:20px;margin-bottom:18px}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
 .half{grid-column:span 6}.third{grid-column:span 4}.full{grid-column:span 12}
 @media(max-width:900px){.half,.third{grid-column:span 12}}
@@ -26,7 +24,7 @@ label{display:block;color:var(--muted);font-size:.9rem;margin:10px 0 6px}
 input,select,textarea{width:100%;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--dark);color:var(--text);font-weight:700}
 textarea{min-height:70px;resize:vertical}
 table{width:100%;border-collapse:collapse;background:var(--dark);border-radius:16px;overflow:hidden}
-th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left}
 th{color:#bfdbfe;background:#2563eb20}
 .leader{background:#facc1522}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
@@ -34,7 +32,6 @@ th{color:#bfdbfe;background:#2563eb20}
 .match-card,.detail-card{background:#06101f;border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}
 .badge{display:inline-block;border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:900;background:#2563eb33;color:#bfdbfe;border:1px solid #2563eb66}
 .muted{color:var(--muted)}
-.small{font-size:.86rem}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .cloud-status{position:fixed;right:16px;bottom:16px;background:#06101f;border:1px solid #2a3b58;border-radius:999px;padding:10px 14px;color:#bfdbfe;font-size:.85rem;z-index:99}
 .whatsapp-box{background:#06101f;border:1px solid #2a3b58;border-radius:18px;padding:14px;white-space:pre-wrap;color:#dbeafe;font-family:monospace;font-size:.92rem;line-height:1.45;margin-top:12px}
@@ -58,12 +55,11 @@ th{color:#bfdbfe;background:#2563eb20}
 
 <section id="tablero" class="sheet active">
 <div class="kpis">
-<div class="kpi"><div class="muted small">Líder</div><strong id="kpiLeader">Sin datos</strong></div>
-<div class="kpi"><div class="muted small">Partidos</div><strong id="kpiMatches">0</strong></div>
-<div class="kpi"><div class="muted small">Jugadores</div><strong id="kpiPlayers">0</strong></div>
-<div class="kpi"><div class="muted small">Última carga</div><strong id="kpiSync">-</strong></div>
+<div class="kpi"><div class="muted">Líder</div><strong id="kpiLeader">Sin datos</strong></div>
+<div class="kpi"><div class="muted">Partidos</div><strong id="kpiMatches">0</strong></div>
+<div class="kpi"><div class="muted">Jugadores</div><strong id="kpiPlayers">0</strong></div>
+<div class="kpi"><div class="muted">Última carga</div><strong id="kpiSync">-</strong></div>
 </div>
-
 <div class="panel"><h2>Tabla de posiciones</h2><div id="standings"></div></div>
 <div class="panel"><h2>Detalle por jugador</h2><select id="detailPlayer" onchange="renderDetails()"></select><div id="playerDetails"></div></div>
 </section>
@@ -151,7 +147,7 @@ function dateKey(v){
  }
  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
  if(m){
-  let y=m[3]; 
+  let y=m[3];
   if(y.length===2)y="20"+y;
   return `${Number(m[1])}/${Number(m[2])}/${y}`;
  }
@@ -165,19 +161,7 @@ function dateSortValue(v){
 }
 
 function flag(team){
- const f={
- "méxico":"🇲🇽","sudáfrica":"🇿🇦","república de corea":"🇰🇷","república checa":"🇨🇿",
- "canadá":"🇨🇦","bosnia y herzegovina":"🇧🇦","estados unidos":"🇺🇸","paraguay":"🇵🇾",
- "catar":"🇶🇦","suiza":"🇨🇭","brasil":"🇧🇷","marruecos":"🇲🇦","haití":"🇭🇹",
- "escocia":"🏴","australia":"🇦🇺","turquía":"🇹🇷","alemania":"🇩🇪","curazao":"🇨🇼",
- "países bajos":"🇳🇱","japón":"🇯🇵","costa de marfil":"🇨🇮","ecuador":"🇪🇨",
- "suecia":"🇸🇪","túnez":"🇹🇳","españa":"🇪🇸","cabo verde":"🇨🇻","bélgica":"🇧🇪",
- "egipto":"🇪🇬","arabia saudí":"🇸🇦","uruguay":"🇺🇾","ri de irán":"🇮🇷","irán":"🇮🇷",
- "nueva zelanda":"🇳🇿","francia":"🇫🇷","senegal":"🇸🇳","irak":"🇮🇶","noruega":"🇳🇴",
- "argentina":"🇦🇷","argelia":"🇩🇿","austria":"🇦🇹","jordania":"🇯🇴","portugal":"🇵🇹",
- "rd congo":"🇨🇩","inglaterra":"🏴","croacia":"🇭🇷","ghana":"🇬🇭","panamá":"🇵🇦",
- "uzbekistán":"🇺🇿","colombia":"🇨🇴"
- };
+ const f={"méxico":"🇲🇽","sudáfrica":"🇿🇦","república de corea":"🇰🇷","república checa":"🇨🇿","canadá":"🇨🇦","bosnia y herzegovina":"🇧🇦","estados unidos":"🇺🇸","paraguay":"🇵🇾","catar":"🇶🇦","suiza":"🇨🇭","brasil":"🇧🇷","marruecos":"🇲🇦","haití":"🇭🇹","escocia":"🏴","australia":"🇦🇺","turquía":"🇹🇷","alemania":"🇩🇪","curazao":"🇨🇼","países bajos":"🇳🇱","japón":"🇯🇵","costa de marfil":"🇨🇮","ecuador":"🇪🇨","suecia":"🇸🇪","túnez":"🇹🇳","españa":"🇪🇸","cabo verde":"🇨🇻","bélgica":"🇧🇪","egipto":"🇪🇬","arabia saudí":"🇸🇦","uruguay":"🇺🇾","ri de irán":"🇮🇷","irán":"🇮🇷","nueva zelanda":"🇳🇿","francia":"🇫🇷","senegal":"🇸🇳","irak":"🇮🇶","noruega":"🇳🇴","argentina":"🇦🇷","argelia":"🇩🇿","austria":"🇦🇹","jordania":"🇯🇴","portugal":"🇵🇹","rd congo":"🇨🇩","inglaterra":"🏴","croacia":"🇭🇷","ghana":"🇬🇭","panamá":"🇵🇦","uzbekistán":"🇺🇿","colombia":"🇨🇴"};
  return f[normalize(team)]||"⚽";
 }
 
@@ -278,6 +262,12 @@ function loadCloud(){
  window[cb]=res=>{
   try{
    const d=res.data||{};
+   const currentEntryDay=entryDay.value;
+   const currentRealDay=realDay.value;
+   const currentEntryPlayer=entryPlayer.value;
+   const currentDetailPlayer=detailPlayer.value;
+   const currentSpecialPlayer=specialPlayer.value;
+
    const rawPlayers=rowsToObjects(d.Jugadores||d.DB||[]);
    const rawMatches=rowsToObjects(d.Partidos||d.Sheet1||[]);
    const rawPred=rowsToObjects(d.Predicciones||[]);
@@ -294,7 +284,14 @@ function loadCloud(){
 
    players=normalizePlayers(rawPlayers);
 
-   renderAll();
+   renderAll({
+    entryDay:currentEntryDay,
+    realDay:currentRealDay,
+    entryPlayer:currentEntryPlayer,
+    detailPlayer:currentDetailPlayer,
+    specialPlayer:currentSpecialPlayer
+   });
+
    cloudStatus.textContent="Datos cargados";
   }catch(e){
    console.error(e);
@@ -317,23 +314,29 @@ async function saveSheet(sheet,rows){
  cloudStatus.textContent="Guardado "+sheet+" · "+new Date().toLocaleTimeString();
 }
 
-function fillSelect(sel,data,key="nombre"){
- const current=sel.value;
+function fillSelect(sel,data,key="nombre",keepValue=""){
+ const current=keepValue||sel.value;
  sel.innerHTML=data.map(x=>`<option value="${x[key]}">${x[key]}</option>`).join("");
- if(current)sel.value=current;
+ if(current && [...sel.options].some(o=>o.value===current))sel.value=current;
 }
 
-function fillDays(){
+function fillDays(keepEntry="",keepReal=""){
+ const currentEntry=keepEntry||entryDay.value;
+ const currentReal=keepReal||realDay.value;
  const days=[...new Set(matches.map(m=>m.fecha).filter(Boolean))].sort((a,b)=>dateSortValue(a)-dateSortValue(b));
+
  entryDay.innerHTML=days.map(d=>`<option value="${d}">${d}</option>`).join("");
  realDay.innerHTML=entryDay.innerHTML;
+
+ if(days.includes(currentEntry))entryDay.value=currentEntry;
+ if(days.includes(currentReal))realDay.value=currentReal;
 }
 
-function renderAll(){
- fillSelect(entryPlayer,players);
- fillSelect(detailPlayer,players);
- fillSelect(specialPlayer,players);
- fillDays();
+function renderAll(keep={}){
+ fillSelect(entryPlayer,players,"nombre",keep.entryPlayer);
+ fillSelect(detailPlayer,players,"nombre",keep.detailPlayer);
+ fillSelect(specialPlayer,players,"nombre",keep.specialPlayer);
+ fillDays(keep.entryDay,keep.realDay);
 
  renderEntries();
  renderRealEntries();
@@ -693,7 +696,12 @@ function downloadCSV(){
  a.click();
 }
 
-setInterval(loadCloud,30000);
+setInterval(()=>{
+ const active=document.activeElement;
+ const isEditing=active&&["INPUT","TEXTAREA","SELECT"].includes(active.tagName);
+ if(!isEditing)loadCloud();
+},30000);
+
 loadCloud();
 </script>
 </body>
