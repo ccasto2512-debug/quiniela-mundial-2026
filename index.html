@@ -308,9 +308,23 @@ function loadCloud(){
 
 async function saveSheet(sheet,rows){
  cloudStatus.textContent="Guardando "+sheet+"...";
- const body=new URLSearchParams({sheet,rows:JSON.stringify(rows)});
- await fetch(API_URL,{method:"POST",mode:"no-cors",body});
+
+ const body=new URLSearchParams({
+  sheet,
+  rows:JSON.stringify(rows)
+ });
+
+ await fetch(API_URL,{
+  method:"POST",
+  mode:"no-cors",
+  body
+ });
+
  cloudStatus.textContent="Guardado "+sheet+" · "+new Date().toLocaleTimeString();
+
+ setTimeout(()=>{
+  loadCloud();
+ },1200);
 }
 
 function fillSelect(sel,data,key="nombre",keep=""){
@@ -409,11 +423,14 @@ function saveEntries(){
   }))
  );
 
- saveSheet("Predicciones",rows);
- renderStandings();
- renderDetails();
- alert("Predicciones guardadas");
-}
+saveSheet("Predicciones",rows);
+
+renderEntries();
+renderStandings();
+renderDetails();
+renderShareMessage();
+
+alert("Predicciones guardadas");
 
 function renderRealEntries(){
  const day=realDay.value;
@@ -463,10 +480,13 @@ function saveRealEntries(){
   }))
  );
 
- saveSheet("Resultados",rows);
- renderStandings();
- alert("Resultados guardados");
-}
+saveSheet("Resultados",rows);
+
+renderRealEntries();
+renderStandings();
+renderDetails();
+
+alert("Resultados guardados");
 
 function renderDetails(){
  const player=detailPlayer.value;
